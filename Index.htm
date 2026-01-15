@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سباق الجمال الذكي</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #f4e4bc; font-family: sans-serif; text-align: center; margin: 0; padding-bottom: 50px; }
+        #multiplier { font-size: 60px; font-weight: bold; color: #2e7d32; padding: 40px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .card { background: white; margin: 15px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 15px; margin: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; text-align: center; }
+        button { width: 90%; padding: 15px; margin-top: 10px; border-radius: 12px; border: none; font-size: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        #btn-bet { background: #4caf50; color: white; }
+        #btn-cash { background: #ff9800; color: white; display: none; }
+        #status { margin-top: 15px; font-weight: bold; color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+    <div id="multiplier">1.00x</div>
+
+    <div class="card">
+        <h2 id="welcome">مرحباً بك</h2>
+        <div style="font-size: 24px; color: #555;">رصيدك: <span id="balance" style="color: #2e7d32; font-weight: bold;">0</span> 💰</div>
+        <input type="number" id="bet-input" value="10" min="1">
+        <button id="btn-bet" onclick="startPlay()">وضع الرهان</button>
+        <button id="btn-cash" onclick="collectWin()">سحب الأرباح!</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // البيانات المستخرجة من صورك
+        const URL = "https://uqmfwgdrlcqywxvdpclh.supabase.co";
+        const KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
+        const supabase = window.supabase.createClient(URL, KEY);
+
+        let userBalance = 0, username = "", currentBet = 0, multi = 1.0, gameActive = false, gameInterval;
+
+        // تسجيل الدخول
+        window.onload = async () => {
+            username = prompt("أدخل اسمك للبدء:");
+            if(!username) username = "Player_" + Math.floor(Math.random()*1000);
+            document.getElementById('welcome').innerText = "اللاعب: " + username;
+            await syncBalance();
+        };
+
+        async function syncBalance() {
+            let { data } = await supabase.from('Profiles').select('*').eq('Username', username).single();
+            if(!data) {
+                const { data: newUser } = await supabase.from('Profiles').insert([{Username: username, Balance: 1000}]).select().single();
+                userBalance = newUser.Balance;
+            } else {
+                userBalance = data.Balance;
+            }
+            document.getElementById('balance').innerText = userBalance;
+        }
+
+        async function startPlay() {
+            let amt = parseInt(document.getElementById('bet-input').value);
+            if(amt > userBalance || amt <= 0) return alert("الرصيد غير كافٍ!");
+
+            currentBet = amt;
+            userBalance -= amt;
+            document.getElementById('balance').innerText = userBalance;
+            document.getElementById('status').innerText = "";
+            
+            await supabase.from('Profiles').update({Balance: userBalance}).eq('Username', username);
+
+            document.getElementById('btn-bet').style.display = 'none';
+            document.getElementById('btn-cash').style.display = 'block';
+            
+            runMultiplier();
+        }
+
+        function runMultiplier() {
+            gameActive = true;
+            multi = 1.0;
+            let crashPoint = (Math.random() * 4 + 1.1).toFixed(2);
+
+            gameInterval = setInterval(async () => {
+                multi += 0.01;
+                document.getElementById('multiplier').innerText = multi.toFixed(2) + "x";
+
+                if(multi >= crashPoint) {
+                    clearInterval(gameInterval);
+                    gameActive = false;
+                    document.getElementById('status').innerText = "💥 تعثر الجمل!";
+                    await sendProfitToAdmin(currentBet);
+                    resetGame();
+                }
+            }, 100);
+        }
+
+        async function collectWin() {
+            if(!gameActive) return;
+            clearInterval(gameInterval);
+            gameActive = false;
+            let winAmount = Math.floor(currentBet * multi);
+            userBalance += winAmount;
+            await supabase.from('Profiles').update({Balance: userBalance}).eq('Username', username);
+            alert("مبروك! ربحت " + winAmount + " نقطة");
+            resetGame();
+        }
+
+        async function sendProfitToAdmin(lossAmt) {
+            let { data } = await supabase.from('Admin_states').select('*').single();
+            let newTotal = (data.total_house_profit || 0) + lossAmt;
+            await supabase.from('Admin_states').update({total_house_profit: newTotal}).eq('id', data.id);
+        }
+
+        function resetGame() {
+            document.getElementById('btn-bet').style.display = 'block';
+            document.getElementById('btn-cash').style.display = 'none';
+            syncBalance();
+        }
+    </script>
+</body>
+</html>
