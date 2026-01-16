@@ -1,155 +1,36 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الهجن</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: sans-serif; background: #0b141a; color: white; text-align: center; padding: 20px; }
-        .box { background: #1c262d; padding: 30px; border-radius: 15px; max-width: 350px; margin: auto; border: 1px solid #2d333b; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #2d333b; background: #12191f; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-login { background: #28a745; color: white; margin-top: 10px; }
-        .btn-bet { background: #28a745; color: white; }
-        .btn-cash { background: #dc3545; color: white; }
-        #game-ui { display: none; }
-        .sky { background: #12191f; height: 150px; border-radius: 10px; position: relative; margin: 15px 0; overflow: hidden; }
-        .camel { width: 60px; position: absolute; left: 10px; bottom: 10px; transition: 0.1s linear; }
-    </style>
-</head>
-<body>
+async function doLogin() {
+    const u = document.getElementById('user').value.trim();
+    const p = document.getElementById('pass').value.trim();
+    const btn = document.getElementById('login-btn');
 
-<div id="login-ui" class="box">
-    <h2>تسجيل الدخول</h2>
-    <input type="text" id="user" placeholder="اسم المستخدم">
-    <input type="password" id="pass" placeholder="كلمة السر">
-    <button onclick="doLogin()" id="login-btn" class="btn-login">دخول الآن</button>
-</div>
+    if(!u || !p) { alert("أدخل البيانات أولاً"); return; }
+    btn.innerText = "جاري التحقق...";
 
-<div id="game-ui" class="box">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <span id="name-tag"></span>
-        <span style="color:#ffcc00;">💰 <span id="bal-tag">0</span></span>
-    </div>
-    <h1 id="mult-text" style="font-size: 50px; color: #00ff88; margin: 10px 0;">1.00x</h1>
-    <div id="timer" style="font-size: 30px; color: #ffcc00;">5</div>
-    <div class="sky">
-        <div id="camel" class="camel">🐪</div>
-    </div>
-    <input type="number" id="amount" value="10">
-    <button id="action-btn" onclick="takeAction()" class="btn-bet">رهان</button>
-</div>
+    // هذا التعديل سيظهر لك رسالة الخطأ الحقيقية إذا فشل الاتصال
+    const { data, error } = await client
+        .from('Profiles')
+        .select('*')
+        .eq('username', u)
+        .eq('password', p)
+        .maybeSingle(); // استخدام maybeSingle أفضل لتجنب الأخطاء البرمجية
 
-<script>
-    // إعدادات Supabase
-    const URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
-    const KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
-    const client = supabase.createClient(URL, KEY);
-
-    let myUser, myBal, gameTimer, mult = 1.0, isBet = false, isCashed = false, betAmt = 0;
-
-    // دالة تسجيل الدخول
-    async function doLogin() {
-        const u = document.getElementById('user').value.trim();
-        const p = document.getElementById('pass').value.trim();
-        const btn = document.getElementById('login-btn');
-
-        if(!u || !p) { alert("أدخل البيانات أولاً"); return; }
-        btn.innerText = "جاري التحقق...";
-
-        try {
-            const { data, error } = await client.from('Profiles').select('*').eq('username', u).eq('password', p).single();
-            
-            if (error || !data) {
-                alert("اسم المستخدم أو كلمة السر غير صحيحة");
-                btn.innerText = "دخول الآن";
-            } else {
-                myUser = data.username;
-                myBal = data.balance;
-                document.getElementById('login-ui').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'block';
-                document.getElementById('name-tag').innerText = myUser;
-                document.getElementById('bal-tag').innerText = Math.floor(myBal);
-                startRound();
-            }
-        } catch (err) {
-            alert("حدث خطأ في الاتصال بالقاعدة");
-            btn.innerText = "دخول الآن";
-        }
+    if (error) {
+        console.error(error);
+        alert("خطأ من Supabase: " + error.message); // سيخبرك هنا بالسبب الحقيقي للرفض
+        btn.innerText = "دخول الآن";
+        return;
     }
 
-    function startRound() {
-        clearInterval(gameTimer);
-        mult = 1.0; isBet = false; isCashed = false;
-        document.getElementById('mult-text').style.display = 'none';
-        document.getElementById('timer').style.display = 'block';
-        document.getElementById('action-btn').innerText = "رهان";
-        document.getElementById('action-btn').className = "btn-bet";
-        document.getElementById('action-btn').disabled = false;
-        document.getElementById('camel').style.left = "10px";
-
-        let wait = 5;
-        document.getElementById('timer').innerText = wait;
-        let countInterval = setInterval(() => {
-            wait--;
-            document.getElementById('timer').innerText = wait;
-            if(wait <= 0) { clearInterval(countInterval); runGame(); }
-        }, 1000);
-    }
-
-    function takeAction() {
-        const btn = document.getElementById('action-btn');
-        if(btn.innerText === "رهان") {
-            betAmt = parseFloat(document.getElementById('amount').value);
-            if(betAmt > myBal || betAmt <= 0) return alert("الرصيد لا يكفي");
-            isBet = true;
-            btn.innerText = "تم الرهان..";
-            btn.disabled = true;
-        } else {
-            cashOut();
-        }
-    }
-
-    function runGame() {
-        document.getElementById('timer').style.display = 'none';
-        document.getElementById('mult-text').style.display = 'block';
-        if(isBet) {
-            myBal -= betAmt;
-            document.getElementById('bal-tag').innerText = Math.floor(myBal);
-            document.getElementById('action-btn').innerText = "سحب";
-            document.getElementById('action-btn').className = "btn-cash";
-            document.getElementById('action-btn').disabled = false;
-        }
-        let crash = (Math.random() * 4 + 1.1).toFixed(2);
-        gameTimer = setInterval(() => {
-            mult = parseFloat((mult + 0.04).toFixed(2));
-            document.getElementById('mult-text').innerText = mult + "x";
-            document.getElementById('camel').style.left = (mult * 20) + "px";
-            
-            if(mult >= crash) {
-                clearInterval(gameTimer);
-                document.getElementById('mult-text').innerText = "💥 " + mult;
-                saveBal();
-                setTimeout(startRound, 3000);
-            }
-        }, 100);
-    }
-
-    async function cashOut() {
-        if(!isBet || isCashed) return;
-        isCashed = true;
-        let win = betAmt * mult;
-        myBal += win;
+    if (!data) {
+        alert("اسم المستخدم أو كلمة السر غير صحيحة");
+        btn.innerText = "دخول الآن";
+    } else {
+        myUser = data.username;
+        myBal = data.balance;
+        document.getElementById('login-ui').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'block';
+        document.getElementById('name-tag').innerText = myUser;
         document.getElementById('bal-tag').innerText = Math.floor(myBal);
-        document.getElementById('action-btn').innerText = "✅ +" + Math.floor(win);
-        document.getElementById('action-btn').disabled = true;
-        saveBal();
+        startRound();
     }
-
-    async function saveBal() {
-        await client.from('Profiles').update({ balance: Math.floor(myBal) }).eq('username', myUser);
-    }
-</script>
-</body>
-</html>
+}
