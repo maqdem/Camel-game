@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن - النسخة الاحترافية</title>
+    <title>سباق الهجن - سجل المضاعفات</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; }
         body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-y: auto; padding: 20px 0; }
-        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid #2d333b; text-align: center; position: relative; }
+        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid #2d333b; text-align: center; }
         
         #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); margin: 20px 0; display: none; }
         .multiplier { font-size: 65px; font-weight: 900; color: var(--accent); margin: 15px 0; }
@@ -19,29 +19,28 @@
         .controls { background: #0d1117; padding: 15px; border-radius: 18px; margin-bottom: 20px; }
         .input-field { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #333; background: #1c262d; color: white; text-align: center; font-size: 18px; }
         
-        button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+        button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; position: relative; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cancel { background: #444; color: white; }
         .btn-cashout { background: var(--error); color: white; display: flex; flex-direction: column; line-height: 1.2; }
         .btn-cashout .sub-text { font-size: 14px; font-weight: normal; opacity: 0.9; margin-top: 4px; }
         .btn-waiting { background: #222; color: #555; cursor: not-allowed; }
 
-        .balance-container { color: var(--gold); font-weight: bold; font-size: 18px; transition: all 0.3s ease; }
-        .balance-up { transform: scale(1.3); color: var(--accent) !important; }
+        .balance-container { color: var(--gold); font-weight: bold; font-size: 18px; }
         
-        /* سجل الجولات */
+        /* سجل المضاعفات */
         .history-section { text-align: right; margin-top: 10px; border-top: 1px solid #2d333b; padding-top: 15px; }
         .history-title { font-size: 14px; color: #888; margin-bottom: 10px; display: block; }
-        .history-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; flex-wrap: wrap; justify-content: center; }
-        .history-item { padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; background: #12191f; min-width: 50px; text-align: center; }
-        .hist-green { color: var(--accent); border: 1px solid rgba(0,255,136,0.3); }
-        .hist-red { color: var(--error); border: 1px solid rgba(255,75,75,0.3); }
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; flex-wrap: wrap; justify-content: center; }
+        .history-item { padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; background: #12191f; min-width: 55px; text-align: center; }
+        
+        /* ألوان السجل بناءً على قوة المضاعف */
+        .mult-low { color: #ff4b4b; border: 1px solid rgba(255,75,75,0.2); }    /* أقل من 2x */
+        .mult-mid { color: #00ff88; border: 1px solid rgba(0,255,136,0.2); }   /* من 2x إلى 10x */
+        .mult-high { color: #ffcc00; border: 1px solid rgba(255,204,0,0.4); box-shadow: 0 0 5px rgba(255,204,0,0.2); } /* أكثر من 10x */
 
-        .win-float { position: absolute; font-weight: bold; color: var(--accent); animation: floatUp 1s forwards; pointer-events: none; z-index: 100; text-shadow: 0 0 10px rgba(0,255,136,0.5); }
-        @keyframes floatUp { 
-            0% { transform: translate(-50%, 0); opacity: 1; font-size: 20px; }
-            100% { transform: translate(-50%, -120px); opacity: 0; font-size: 35px; }
-        }
+        .win-float { position: absolute; font-weight: bold; color: var(--accent); animation: floatUp 1s forwards; pointer-events: none; z-index: 100; }
+        @keyframes floatUp { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -100px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -62,7 +61,6 @@
 
         <div id="main-timer">5</div>
         <div id="mult-display" class="multiplier">1.00x</div>
-        
         <div class="track"><div id="camel" class="camel">🐪</div></div>
 
         <div class="controls">
@@ -71,9 +69,8 @@
         </div>
 
         <div class="history-section">
-            <span class="history-title">الجولات السابقة:</span>
-            <div id="history-list" class="history-list">
-                </div>
+            <span class="history-title">نتائج الجولات:</span>
+            <div id="history-list" class="history-list"></div>
         </div>
     </div>
 </div>
@@ -83,22 +80,20 @@
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
     let user = null, currentMult = 1.0, gameActive = false, userInBet = false, betPlaced = false, hasCashedOut = false;
-    let startTime, crashPoint;
-    let history = [];
+    let startTime, crashPoint, lastBetAmount = 0;
 
     async function handleLogin() {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
         try {
-            const { data, error } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
+            const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
             if (data) {
                 user = data;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('game-screen').style.display = 'block';
-                updateUI();
-                autoLoop();
-            } else { alert("بيانات الدخول غير صحيحة"); }
-        } catch (e) { alert("حدث خطأ في الاتصال"); }
+                updateUI(); autoLoop();
+            } else { alert("خطأ في البيانات"); }
+        } catch (e) { alert("خطأ اتصال"); }
     }
 
     function updateUI() {
@@ -111,16 +106,13 @@
             resetRace();
             const timerDisplay = document.getElementById('main-timer');
             const multDisplay = document.getElementById('mult-display');
-            
             multDisplay.style.display = 'none';
             timerDisplay.style.display = 'block';
-            
             for(let i=5; i>0; i--) {
                 timerDisplay.innerText = i;
                 if (!betPlaced) updateButton("رهان للسباق القادم", "btn-bet");
                 await new Promise(r => setTimeout(r, 1000));
             }
-            
             timerDisplay.style.display = 'none';
             multDisplay.style.display = 'block';
             await startRace();
@@ -142,7 +134,7 @@
             cashOut();
         } else if (!gameActive && !betPlaced) {
             if (amt > user.balance || amt <= 0) return alert("رصيد ناقص");
-            betPlaced = true; updateButton("إلغاء الرهان", "btn-cancel");
+            betPlaced = true; lastBetAmount = amt; updateButton("إلغاء الرهان", "btn-cancel");
         } else if (!gameActive && betPlaced) {
             betPlaced = false; updateButton("رهان للسباق القادم", "btn-bet");
         }
@@ -151,48 +143,32 @@
     function updateButton(text, className, subText = "") {
         const btn = document.getElementById('action-btn');
         btn.className = className;
-        if (subText) {
-            btn.innerHTML = `<span>${text}</span><small class="sub-text">${subText}</small>`;
-        } else {
-            btn.innerHTML = text;
-        }
+        btn.innerHTML = subText ? `<span>${text}</span><small class="sub-text">${subText}</small>` : text;
     }
 
     async function startRace() {
-        gameActive = true; 
-        startTime = Date.now();
-        // معادلة حظ متغيرة
-        crashPoint = (Math.random() * Math.random() * 10 + 1.1);
+        gameActive = true; startTime = Date.now();
+        // نظام عشوائي للمضاعفات
+        let r = Math.random();
+        crashPoint = r < 0.1 ? 1.05 : r < 0.5 ? (Math.random() * 2 + 1.1) : (Math.random() * 8 + 2);
         
         if (betPlaced) {
             userInBet = true; betPlaced = false;
-            const betAmt = parseFloat(document.getElementById('bet-amount').value);
-            user.balance -= betAmt;
-            updateUI();
+            user.balance -= lastBetAmount; updateUI();
         }
-
         return new Promise(resolve => {
             function frame() {
                 if (!gameActive) return resolve();
                 let elapsed = (Date.now() - startTime) / 1000;
                 currentMult = Math.pow(Math.E, 0.085 * elapsed);
-                
                 document.getElementById('mult-display').innerText = currentMult.toFixed(2) + "x";
                 document.getElementById('camel').style.left = Math.min((currentMult - 1) * 15, 88) + "%";
-
                 if (userInBet && !hasCashedOut) {
-                    const bet = parseFloat(document.getElementById('bet-amount').value);
-                    const currentWin = (bet * currentMult).toFixed(2);
-                    updateButton("سحب الأرباح", "btn-cashout", `اربح الآن: ${currentWin} 💰`);
-                } else if (!userInBet) {
-                    updateButton("شاهد السباق...", "btn-waiting");
-                }
-
-                if (currentMult >= crashPoint) {
-                    gameActive = false;
-                    onCrash();
-                    resolve();
-                } else { requestAnimationFrame(frame); }
+                    let win = (lastBetAmount * currentMult).toFixed(2);
+                    updateButton("سحب الأرباح", "btn-cashout", `اربح الآن: ${win} 💰`);
+                } else if (!userInBet) { updateButton("شاهد...", "btn-waiting"); }
+                if (currentMult >= crashPoint) { gameActive = false; onCrash(); resolve(); }
+                else { requestAnimationFrame(frame); }
             }
             requestAnimationFrame(frame);
         });
@@ -200,11 +176,10 @@
 
     function cashOut() {
         hasCashedOut = true;
-        const bet = parseFloat(document.getElementById('bet-amount').value);
-        const winAmount = bet * currentMult;
+        const winAmount = lastBetAmount * currentMult;
         animateWin(winAmount.toFixed(2));
         user.balance = parseFloat(user.balance) + winAmount;
-        updateButton("تم السحب بنجاح", "btn-waiting");
+        updateButton("تم السحب", "btn-waiting");
         updateDB();
     }
 
@@ -217,39 +192,27 @@
         float.style.left = (rect.left + rect.width / 2) + 'px';
         float.style.top = rect.top + 'px';
         document.body.appendChild(float);
-        
-        const bWrap = document.getElementById('balance-wrap');
-        bWrap.classList.add('balance-up');
-        
-        setTimeout(() => {
-            updateUI();
-            bWrap.classList.remove('balance-up');
-            float.remove();
-        }, 1000);
+        setTimeout(() => { updateUI(); float.remove(); }, 1000);
     }
 
     function onCrash() {
-        const finalMult = currentMult.toFixed(2);
-        document.getElementById('mult-display').innerText = "💥 " + finalMult + "x";
+        const val = currentMult.toFixed(2);
+        document.getElementById('mult-display').innerText = "💥 " + val + "x";
         document.getElementById('mult-display').style.color = "var(--error)";
-        updateButton("انتهى السباق", "btn-waiting");
+        updateButton("انفجر!", "btn-waiting");
         
-        // إضافة النتيجة للسجل
-        addToHistory(finalMult);
-        
+        // إضافة المضاعف للسجل دائماً
+        addToHistory(val);
         if (userInBet) updateDB();
     }
 
     function addToHistory(val) {
         const list = document.getElementById('history-list');
         const item = document.createElement('div');
-        item.className = `history-item ${val >= 2 ? 'hist-green' : 'hist-red'}`;
+        let colorClass = val < 2 ? 'mult-low' : val < 10 ? 'mult-mid' : 'mult-high';
+        item.className = `history-item ${colorClass}`;
         item.innerText = val + 'x';
-        
-        // إبقاء آخر 10 نتائج فقط
-        if (list.children.length >= 12) {
-            list.removeChild(list.lastChild);
-        }
+        if (list.children.length >= 12) list.removeChild(list.lastChild);
         list.insertBefore(item, list.firstChild);
     }
 
