@@ -49,7 +49,7 @@
     <div id="game-screen" style="display:none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <span id="player-name" style="color: #888;">---</span>
-            <div id="balance-wrap" class="balance-container">💰 <span id="player-balance">0</span></div>
+            <div id="balance-wrap" class="balance-container">💰 <span id="player-balance">0.00</span></div>
         </div>
 
         <div id="main-timer">5</div>
@@ -86,8 +86,9 @@
         } catch (e) { alert("حدث خطأ في الاتصال"); }
     }
 
+    // تم إضافة toFixed(2) هنا لإظهار الفواصل في الرصيد
     function updateUI() {
-        document.getElementById('player-balance').innerText = Math.floor(user.balance);
+        document.getElementById('player-balance').innerText = parseFloat(user.balance).toFixed(2);
         document.getElementById('player-name').innerText = user.username;
     }
 
@@ -166,7 +167,7 @@
 
                 if (userInBet && !hasCashedOut) {
                     const bet = parseFloat(document.getElementById('bet-amount').value);
-                    const currentWin = Math.floor(bet * currentMult);
+                    const currentWin = (bet * currentMult).toFixed(2); // إضافة الفواصل هنا في الزر
                     updateButton("سحب الأرباح", "btn-cashout", `اربح الآن: ${currentWin} 💰`);
                 } else if (!userInBet) {
                     updateButton("شاهد السباق...", "btn-waiting");
@@ -185,11 +186,12 @@
     function cashOut() {
         hasCashedOut = true;
         const bet = parseFloat(document.getElementById('bet-amount').value);
-        const winAmount = Math.floor(bet * currentMult);
+        const winAmount = bet * currentMult;
         
-        animateWin(winAmount);
+        // إرسال الرقم بالفواصل للأنيميشن
+        animateWin(winAmount.toFixed(2));
         
-        user.balance += winAmount;
+        user.balance = parseFloat(user.balance) + winAmount;
         updateButton("تم السحب بنجاح", "btn-waiting");
         updateDB();
     }
