@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رادار الطيران - نسخة الموسيقى المصلحة</title>
+    <title>رادار الطيران - نسخة هامش الربح</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
@@ -16,8 +16,8 @@
         .controls { background: #12191f; padding: 15px; border-radius: 15px; }
         input { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #1c262d; color: white; text-align: center; font-size: 20px; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #bet-btn { background: #238636; color: white; }
-        #cashout-btn { background: #f85149; color: white; display: none; }
+        #bet-btn { background: #238636; color: white; display: block; }
+        #cashout-btn { background: #f85149; color: white; display: none; font-size: 20px; }
         .history { display: flex; justify-content: center; gap: 5px; margin-top: 15px; flex-wrap: wrap; }
         .hist-tag { padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; background: #2d333b; }
         .red { color: #f85149; } .green { color: #3fb950; }
@@ -53,7 +53,7 @@
             <input type="number" id="bet-amount" value="10">
             <button id="bet-btn" onclick="placeBet()">تجهيز الرهان</button>
         </div>
-        <button id="cashout-btn" onclick="cashOut()">اسحب الأرباح!</button>
+        <button id="cashout-btn" onclick="cashOut()"></button>
     </div>
 
     <div id="history-list" class="history"></div>
@@ -64,13 +64,11 @@
     const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
-    // تعريف الأصوات بروابط مباشرة وموثوقة
     const s_tick = new Audio('https://www.soundjay.com/buttons/sounds/button-50.mp3');
     const s_music = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3'); 
     const s_crash = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
     const s_win = new Audio('https://www.soundjay.com/buttons/sounds/button-37.mp3');
 
-    // تفعيل الأصوات مسبقاً لتجاوز حظر المتصفح
     function unlockAudio() {
         s_music.play().then(() => { s_music.pause(); s_music.currentTime = 0; }).catch(() => {});
         s_tick.play().then(() => { s_tick.pause(); s_tick.currentTime = 0; }).catch(() => {});
@@ -80,7 +78,7 @@
     let currentMultiplier = 1.0, crashPoint = 0, isBetting = false, hasCashedOut = false, currentBet = 0;
 
     async function login() {
-        unlockAudio(); // تفعيل الصوت عند أول ضغطة
+        unlockAudio();
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
         const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
@@ -110,6 +108,7 @@
         document.getElementById('multiplier').style.color = "#00ff88";
         document.getElementById('countdown-box').style.display = 'block';
         document.getElementById('bet-area').style.display = 'block';
+        document.getElementById('bet-btn').style.display = 'block';
         document.getElementById('bet-btn').disabled = false;
         document.getElementById('bet-btn').innerText = "تجهيز الرهان";
         document.getElementById('cashout-btn').style.display = 'none';
@@ -130,13 +129,13 @@
     }
 
     function placeBet() {
-        unlockAudio(); // تأكيد تفعيل الصوت
+        unlockAudio();
         let amt = parseFloat(document.getElementById('bet-amount').value);
         if (amt > currentBalance || amt <= 0) return alert("الرصيد غير كافٍ");
         currentBet = amt;
         isBetting = true;
         document.getElementById('bet-btn').disabled = true;
-        document.getElementById('bet-btn').innerText = "تم حجز مكانك..";
+        document.getElementById('bet-btn').innerText = "انتظار الإقلاع..";
     }
 
     function launchPlane() {
@@ -144,28 +143,28 @@
         document.getElementById('multiplier').style.display = 'flex';
         document.getElementById('multiplier').innerText = "1.00x";
         
-        // تشغيل الموسيقى
         s_music.currentTime = 0;
         s_music.loop = true;
-        let playPromise = s_music.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => { console.log("تحتاج لتفاعل المستخدم لتشغيل الصوت"); });
-        }
+        s_music.play().catch(() => {});
 
         if (isBetting) {
             currentBalance -= currentBet;
             updateDisplay();
-            document.getElementById('bet-area').style.display = 'none';
+            document.getElementById('bet-btn').style.display = 'none';
             document.getElementById('cashout-btn').style.display = 'block';
+            updateCashoutButton();
         }
 
-        crashPoint = (Math.random() * (Math.random() > 0.8 ? 12 : 3) + 1.1).toFixed(2);
+        crashPoint = (Math.random() * (Math.random() > 0.8 ? 10 : 3) + 1.1).toFixed(2);
 
         gameInterval = setInterval(() => {
             currentMultiplier += (currentMultiplier < 4 ? 0.02 : 0.07);
             document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
             
+            if (isBetting && !hasCashedOut) {
+                updateCashoutButton();
+            }
+
             let moveY = Math.min(currentMultiplier * 6, 80);
             let moveX = Math.min(currentMultiplier * 3, 50);
             document.getElementById('plane-img').style.transform = `translate(${moveX}px, -${moveY}px)`;
@@ -174,6 +173,11 @@
                 triggerCrash();
             }
         }, 100);
+    }
+
+    function updateCashoutButton() {
+        let potentialWin = (currentBet * currentMultiplier).toFixed(2);
+        document.getElementById('cashout-btn').innerHTML = `اسحب <span style="color:#ffcc00">${potentialWin}</span> 💰`;
     }
 
     function cashOut() {
@@ -197,6 +201,9 @@
         document.getElementById('multiplier').innerText = "💥 " + final + "x";
         document.getElementById('multiplier').style.color = "#f85149";
         document.getElementById('cashout-btn').style.display = 'none';
+        document.getElementById('bet-btn').style.display = 'block';
+        document.getElementById('bet-btn').disabled = true;
+        document.getElementById('bet-btn').innerText = "انفجرت!";
         
         addHistory(final);
 
