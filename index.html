@@ -6,15 +6,124 @@
     <title>سباق الهجن - النسخة النهائية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
-        .card { background: #1c262d; padding: 20px; border-radius: 20px; max-width: 400px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #2d333b; }
-        #multiplier { font-size: 65px; font-weight: 900; color: #00ff88; margin: 20px 0; display: none; height: 80px; align-items: center; justify-content: center; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
+        .card { background: #1c262d; padding: 25px; border-radius: 20px; max-width: 400px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #2d333b; display: block; }
+        #multiplier { font-size: 65px; font-weight: 900; color: #00ff88; margin: 20px 0; display: none; height: 80px; align-items: center; justify-content: center; }
         .sky-area { background: linear-gradient(to top, #2c1e12, #5d4037); height: 180px; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; border: 2px solid #12191f; }
         
+        /* الصورة مدمجة هنا */
         .camel { 
             width: 90px; height: 90px; 
             position: absolute; left: 10%; bottom: 10px; 
             background-size: contain; background-repeat: no-repeat;
             z-index: 10;
-            /* استخدمنا كود Base64 الذي قمت بتجهيزه لضمان ظهور الصورة */
-            background-image: url('data:image/jpeg;base64,/9j/4QCARXhpZgAATU0AKgAAAAgABAEAAAQAAAABAAABkAEBAAQAAAABAAABLAEyAAIAAAAUAAAAPodpAAQAAAABAAAAUgAAAAAyMDI2OjAxOjE2IDA3OjE5OjQ1AAABkAMAAgAAABQAAABkAAAAADIwMjY6MDE6MTYgMDc6MTk6MDEA/+AAEEpGSUYAAQEAAAEAAQAA/+IB2ElDQ19QUk9GSUxFAAEBAAAByAAAAAAEMAAAbW50clJHQiBYWVogB+AAAQABAAAAAAAAYWNzcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAPbWAAEAAAAA0y0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJZGVzYwAAAPAAAAAkclhZWgAAARQAAAAUZ1hZWgAAASgAAAAUYlhZWgAAATwAAAAUd3RwdAAAAVAAAAAUclRSQwAAAWQAAAAoZ1RSQwAAAWQAAAAoYlRSQwAAAWQAAAAoY3BydAAAAYwAAAA8bWx1YwAAAAAAAAABAAAADGVuVVMAAAAIAAAAHABzAFIARwBCWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPWFlaIAAAAAAAAPbWAAEAAAAA0y1wYXJhAAAAAAAEAAAAAmZmAADypwAADVkAABPQAAAKWwAAAAAAAAAAbWx1YwAAAAAAAAABAAAADGVuVVMAAAAgAAAAHABHAG8AbwBnAGwAZQAgAEkAbgBjAC4AIAAyADAAMQA2/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/9sAQwEDBAQFBAUJBQUJFA0LDRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU/8AAEQgBLAGQAwEiAAIRAQMRAf/EAB4AAQACAgMBAQEAAAAAAAAAAAAGCAUHAwQJAQIK/8QAWRAAAQMDAgQCBgQICAgKCwAAAQACAwQFEQYhBxIxQRNRCBQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQiQi
+            background-image: url('data:image/jpeg;base64,/9j/4QCARXhpZgAATU0AKgAAAAgABAEAAAQAAAABAAABkAEBAAQAAAABAAABLAEyAAIAAAAUAAAAPodpAAQAAAABAAAAUgAAAAAyMDI2OjAxOjE2IDA3OjE5OjQ1AAABkAMAAgAAABQAAABkAAAAADIwMjY6MDE6MTYgMDc6MTk6MDEA/+AAEEpGSUYAAQEAAAEAAQAA/+IB2ElDQ19QUk9GSUxFAAEBAAAByAAAAAAEMAAAbW50clJHQiBYWVogB+AAAQABAAAAAAAAYWNzcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAPbWAAEAAAAA0y0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJZGVzYwAAAPAAAAAkclhZWgAAARQAAAAUZ1hZWgAAASgAAAAUYlhZWgAAATwAAAAUd3RwdAAAAVAAAAAUclRSQwAAAWQAAAAoZ1RSQwAAAWQAAAAoYlRSQwAAAWQAAAAoY3BydAAAAYwAAAA8bWx1YwAAAAAAAAABAAAADGVuVVMAAAAIAAAAHABzAFIARwBCWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPWFlaIAAAAAAAAPbWAAEAAAAA0y1wYXJhAAAAAAAEAAAAAmZmAADypwAADVkAABPQAAAKWwAAAAAAAAAAbWx1YwAAAAAAAAABAAAADGVuVVMAAAAgAAAAHABHAG8AbwBnAGwAZQAgAEkAbgBjAC4AIAAyADAAMQA2/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/9sAQwEDBAQFBAUJBQUJFA0LDRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU/8AAEQgBLAGQAwEiAAIRAQMRAf/EAB4AAQACAgMBAQEAAAAAAAAAAAAGCAUHAwQJAQIK/8QAWRAAAQMDAgQCBgQICAgKCwAAAQACAwQFEQYhBxIxQRNRCBQiQiQMHTHB8P/'); 
+        }
+
+        .input-group { margin-bottom: 15px; text-align: right; }
+        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #2d333b; background: #12191f; color: white; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; display: block; margin-top: 10px; }
+        .btn-login { background: #238636; color: white; }
+        .btn-bet { background: #238636; color: white; }
+        .btn-cashout { background: #f85149; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="login-ui" class="card">
+    <h2 style="margin-bottom: 25px;">تسجيل الدخول</h2>
+    <div class="input-group">
+        <input type="text" id="u" placeholder="اسم المستخدم">
+    </div>
+    <div class="input-group">
+        <input type="password" id="p" placeholder="كلمة السر">
+    </div>
+    <button onclick="login()" id="login-btn" class="btn-login">دخول الآن</button>
+</div>
+
+<div id="game-ui" style="display:none;" class="card">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <span id="user-name" style="font-weight: bold;"></span>
+        <span style="color:#e3b341; font-weight: bold;">💰 <span id="user-balance">0</span></span>
+    </div>
+    <div id="multiplier">1.00x</div>
+    <div id="countdown-box" style="font-size: 45px; color: #ffcc00;">5</div>
+    <div class="sky-area">
+        <div id="camel-img" class="camel"></div>
+    </div>
+    <input type="number" id="bet-amount" value="10" style="margin-bottom: 10px;">
+    <button id="main-btn" onclick="handleButtonClick()" class="btn-bet">رهان</button>
+</div>
+
+<script>
+    const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+    const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
+    const _supabase = supabase.createClient(S_URL, S_KEY);
+
+    async function login() {
+        const u = document.getElementById('u').value.trim();
+        const p = document.getElementById('p').value.trim();
+        const btn = document.getElementById('login-btn');
+        
+        if(!u || !p) return alert("يرجى إدخال البيانات");
+        btn.innerText = "جاري التحقق...";
+
+        try {
+            const { data, error } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
+            if (data) {
+                username = data.username; 
+                currentBalance = data.balance;
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('user-name').innerText = username;
+                document.getElementById('user-balance').innerText = Math.floor(currentBalance);
+                startNewRound();
+            } else {
+                alert("بيانات خاطئة");
+                btn.innerText = "دخول الآن";
+            }
+        } catch (e) {
+            alert("فشل الاتصال");
+            btn.innerText = "دخول الآن";
+        }
+    }
+
+    let currentBalance, username, gameInterval, countdownInterval;
+    let currentMultiplier = 1.0, crashPoint = 0, betPlaced = false, cashedOut = false, currentBet = 0;
+
+    function startNewRound() {
+        clearInterval(gameInterval);
+        betPlaced = false; cashedOut = false; currentMultiplier = 1.0;
+        document.getElementById('multiplier').style.display = 'none';
+        document.getElementById('countdown-box').style.display = 'block';
+        document.getElementById('main-btn').className = 'btn-bet';
+        document.getElementById('main-btn').innerText = "رهان";
+        document.getElementById('main-btn').disabled = false;
+        document.getElementById('camel-img').style.transform = "translateX(0)";
+
+        let timeLeft = 5;
+        document.getElementById('countdown-box').innerText = timeLeft;
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('countdown-box').innerText = timeLeft;
+            if (timeLeft <= 0) { clearInterval(countdownInterval); launchCamel(); }
+        }, 1000);
+    }
+
+    function handleButtonClick() {
+        if (document.getElementById('main-btn').innerText === "رهان") {
+            let amt = parseFloat(document.getElementById('bet-amount').value);
+            if (amt > currentBalance || amt <= 0) return alert("رصيد ناقص");
+            currentBet = amt; betPlaced = true;
+            document.getElementById('main-btn').innerText = "تم الحجز";
+            document.getElementById('main-btn').disabled = true;
+        } else { cashOut(); }
+    }
+
+    function launchCamel() {
+        document.getElementById('countdown-box').style.display = 'none';
+        document.getElementById('multiplier').style.display = 'flex';
+        if (betPlaced) {
+            currentBalance -= currentBet;
+            document.getElementById('user-balance').innerText = Math.floor(currentBalance);
+            document.getElementById('main-btn').className = 'btn
