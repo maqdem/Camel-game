@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طيارة الكراش - نظام الصوت المطور</title>
+    <title>طيارة الكراش - الإصدار المصلح</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
         .card { background: #161b22; padding: 20px; border-radius: 20px; max-width: 450px; margin: 10px auto; box-shadow: 0 15px 35px rgba(0,0,0,0.7); border: 1px solid #30363d; }
-        #multiplier { font-size: 75px; color: #00ff88; font-weight: 900; margin: 15px 0; min-height: 110px; display: flex; justify-content: center; align-items: center; }
+        #multiplier { font-size: 70px; color: #00ff88; font-weight: 900; margin: 15px 0; min-height: 100px; display: flex; justify-content: center; align-items: center; }
         #countdown-box { display: none; margin: 20px 0; }
         #timer-arc { font-size: 50px; color: #ffcc00; font-weight: bold; }
         .sky-track { background: linear-gradient(to top, #1e3a8a, #3b82f6); height: 140px; border-radius: 15px; position: relative; overflow: hidden; border: 2px solid #2563eb; margin: 20px 0; }
-        .plane { font-size: 55px; position: absolute; left: 15%; bottom: 30px; transition: transform 0.1s ease-out; display: inline-block; }
-        .controls { background: #0d1117; padding: 15px; border-radius: 15px; border: 1px solid #30363d; }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #30363d; background: #161b22; color: #fff; text-align: center; font-size: 20px; box-sizing: border-box; margin-bottom: 10px; }
+        .plane { font-size: 50px; position: absolute; left: 15%; bottom: 30px; transition: transform 0.1s; display: inline-block; }
+        .controls { background: #0d1117; padding: 15px; border-radius: 15px; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #30363d; background: #161b22; color: #fff; text-align: center; font-size: 18px; margin-bottom: 10px; box-sizing: border-box; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         #bet-btn { background: #238636; color: white; }
         #cashout-btn { background: #f85149; color: white; display: none; }
         .history-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center; }
-        .history-item { padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; background: rgba(255,255,255,0.05); }
+        .history-item { padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; background: rgba(255,255,255,0.05); }
+        .hist-red { color: #f85149; } .hist-green { color: #3fb950; }
         .win-msg { color: #3fb950; font-weight: bold; margin: 10px 0; min-height: 24px; }
     </style>
 </head>
@@ -29,12 +30,12 @@
     <h2 style="color: #58a6ff;">🚀 رادار الإقلاع</h2>
     <input type="text" id="u" placeholder="اسم المستخدم">
     <input type="password" id="p" placeholder="كلمة السر">
-    <button onclick="login()">دخول المنصة</button>
+    <button onclick="login()" style="background: #21262d; border: 1px solid #30363d; color: white;">دخول المنصة</button>
 </div>
 
 <div id="game-ui" style="display:none;">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #30363d;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
             <span id="user-display" style="color: #8b949e;"></span>
             <span style="color: #e3b341;">💰 <span id="balance-display">0</span></span>
         </div>
@@ -54,19 +55,14 @@
 </div>
 
 <script>
-    // أصوات النظام
-    const soundTakeoff = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3');
-    const soundEpicMusic = new Audio('https://cdn.pixabay.com/audio/2024/05/22/audio_51a2e7e39f.mp3'); // موسيقى سينمائية أسرع
-    const soundWin = new Audio('https://www.soundjay.com/button/sounds/button-37.mp3');
-    
-    // صوت التحطم الجديد (انفجار قوي)
-    const soundCrashExplosion = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
-    const soundTick = new Audio('https://www.soundjay.com/button/sounds/button-50.mp3');
+    // إعداد الأصوات بروابط بديلة ومستقرة
+    const soundWin = new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3');
+    const soundTick = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    const soundCrash = new Audio('https://www.myinstants.com/media/sounds/exp.mp3');
+    const soundMusic = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3'); 
 
-    soundEpicMusic.loop = true;
-
-    function stopAllSounds() {
-        [soundTakeoff, soundEpicMusic, soundWin, soundCrashExplosion, soundTick].forEach(s => {
+    function stopSounds() {
+        [soundWin, soundTick, soundCrash, soundMusic].forEach(s => {
             s.pause();
             s.currentTime = 0;
         });
@@ -82,6 +78,117 @@
     async function login() {
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
-        const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
-        if (data) {
-            username =
+        
+        try {
+            const { data, error } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
+            if (data) {
+                username = data.username;
+                currentBalance = data.balance;
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                updateUI();
+                startNewRound();
+            } else {
+                alert("خطأ في بيانات الدخول");
+            }
+        } catch (e) {
+            alert("حدث خطأ في الاتصال");
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('user-display').innerText = username;
+        document.getElementById('balance-display').innerText = Math.floor(currentBalance);
+    }
+
+    function startNewRound() {
+        stopSounds();
+        isGameRunning = false; betPlaced = false; hasCashedOut = false; currentMultiplier = 1.0;
+        document.getElementById('multiplier').style.display = 'none';
+        document.getElementById('countdown-box').style.display = 'block';
+        document.getElementById('bet-area').style.display = 'block';
+        document.getElementById('bet-btn').disabled = false;
+        document.getElementById('cashout-btn').style.display = 'none';
+        document.getElementById('win-status').innerText = "";
+        document.getElementById('plane-actor').style.transform = "translateY(0) rotate(0)";
+
+        let timeLeft = 5;
+        document.getElementById('timer-arc').innerText = timeLeft;
+        let cd = setInterval(() => {
+            timeLeft--;
+            if(timeLeft >= 1) soundTick.play().catch(()=>{});
+            document.getElementById('timer-arc').innerText = timeLeft;
+            if (timeLeft <= 0) { clearInterval(cd); launchPlane(); }
+        }, 1000);
+    }
+
+    function placeBet() {
+        let amt = parseFloat(document.getElementById('bet-amount').value);
+        if (amt > currentBalance || amt <= 0) return alert("الرصيد غير كافٍ!");
+        currentBet = amt; betPlaced = true;
+        document.getElementById('bet-btn').disabled = true;
+        document.getElementById('bet-btn').innerText = "تم حجز مكانك..";
+    }
+
+    function launchPlane() {
+        isGameRunning = true;
+        soundMusic.play().catch(()=>{});
+        document.getElementById('countdown-box').style.display = 'none';
+        document.getElementById('multiplier').style.display = 'flex';
+        document.getElementById('multiplier').style.color = "#00ff88";
+        
+        if (betPlaced) {
+            currentBalance -= currentBet; updateUI();
+            document.getElementById('bet-area').style.display = 'none';
+            document.getElementById('cashout-btn').style.display = 'block';
+        }
+
+        crashPoint = (Math.random() * (Math.random() > 0.8 ? 10 : 3) + 1.1).toFixed(2);
+        gameInterval = setInterval(() => {
+            currentMultiplier += (currentMultiplier < 3 ? 0.02 : 0.08);
+            document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
+            let lift = Math.min(currentMultiplier * 5, 80);
+            document.getElementById('plane-actor').style.transform = `translateY(-${lift}px) rotate(-${lift/4}deg)`;
+            if (currentMultiplier >= crashPoint) finishGame();
+        }, 100);
+    }
+
+    async function cashOut() {
+        if (!betPlaced || hasCashedOut) return;
+        hasCashedOut = true;
+        soundWin.play().catch(()=>{});
+        let winAmount = currentBet * currentMultiplier;
+        currentBalance += winAmount;
+        document.getElementById('cashout-btn').style.display = 'none';
+        document.getElementById('win-status').innerText = `ربحت: +${winAmount.toFixed(0)} 💰`;
+        updateUI();
+        await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
+    }
+
+    async function finishGame() {
+        clearInterval(gameInterval);
+        soundMusic.pause();
+        soundCrash.play().catch(()=>{});
+        const finalMult = currentMultiplier.toFixed(2);
+        document.getElementById('multiplier').innerText = "💥 " + finalMult + "x";
+        document.getElementById('multiplier').style.color = "#f85149";
+        document.getElementById('cashout-btn').style.display = 'none';
+        
+        addToHistory(finalMult);
+        if (betPlaced && !hasCashedOut) {
+            await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
+        }
+        setTimeout(startNewRound, 2500);
+    }
+
+    function addToHistory(val) {
+        const list = document.getElementById('history-list');
+        const item = document.createElement('div');
+        item.className = `history-item ${val >= 2 ? 'hist-green' : 'hist-red'}`;
+        item.innerText = val + "x";
+        list.prepend(item);
+        if (list.children.length > 8) list.lastChild.remove();
+    }
+</script>
+</body>
+</html>
