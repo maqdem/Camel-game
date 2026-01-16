@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طيارة الكراش - النسخة الصوتية</title>
+    <title>طيارة الكراش - النسخة الاحترافية المصلحة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -27,7 +27,6 @@
 
 <div id="login-ui" class="card">
     <h2 style="color: #58a6ff;">🚀 رادار الإقلاع</h2>
-    <p style="font-size: 12px; color: #8b949e;">اضغط دخول لتفعيل النظام الصوتي</p>
     <input type="text" id="u" placeholder="اسم المستخدم">
     <input type="password" id="p" placeholder="كلمة السر">
     <button onclick="login()">دخول المنصة</button>
@@ -40,9 +39,7 @@
             <span style="color: #e3b341;">💰 <span id="balance-display">0</span></span>
         </div>
         <div id="multiplier">1.00x</div>
-        <div id="countdown-box">
-            <div id="timer-arc">5</div>
-        </div>
+        <div id="countdown-box"><div id="timer-arc">5</div></div>
         <div id="win-status" class="win-msg"></div>
         <div class="sky-track"><div id="plane-actor" class="plane">✈️</div></div>
         <div class="controls">
@@ -57,11 +54,19 @@
 </div>
 
 <script>
-    // روابط أصوات خارجية مجانية للاختبار
+    // إعداد الأصوات
     const soundTakeoff = new Audio('https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3');
     const soundWin = new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3');
     const soundCrash = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3');
     const soundTick = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+
+    // وظيفة لإيقاف جميع الأصوات فوراً
+    function stopAllSounds() {
+        [soundTakeoff, soundWin, soundCrash, soundTick].forEach(s => {
+            s.pause();
+            s.currentTime = 0;
+        });
+    }
 
     const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
     const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'; 
@@ -89,7 +94,9 @@
     }
 
     function startNewRound() {
+        stopAllSounds(); // إيقاف صوت التحطم أو أي صوت من الجولة السابقة
         isGameRunning = false; betPlaced = false; hasCashedOut = false; currentMultiplier = 1.0;
+        
         document.getElementById('multiplier').style.display = 'none';
         document.getElementById('countdown-box').style.display = 'block';
         document.getElementById('bet-area').style.display = 'block';
@@ -102,7 +109,7 @@
         document.getElementById('timer-arc').innerText = timeLeft;
         let cd = setInterval(() => {
             timeLeft--;
-            if(timeLeft >= 1) soundTick.play(); // صوت تكة العداد
+            if(timeLeft >= 1) soundTick.play();
             document.getElementById('timer-arc').innerText = timeLeft;
             if (timeLeft <= 0) { clearInterval(cd); launchPlane(); }
         }, 1000);
@@ -118,7 +125,7 @@
 
     async function launchPlane() {
         isGameRunning = true;
-        soundTakeoff.play(); // صوت الإقلاع
+        soundTakeoff.play();
         document.getElementById('countdown-box').style.display = 'none';
         document.getElementById('multiplier').style.display = 'flex';
         document.getElementById('multiplier').style.color = "#00ff88";
@@ -142,7 +149,7 @@
     async function cashOut() {
         if (!betPlaced || hasCashedOut) return;
         hasCashedOut = true;
-        soundWin.play(); // صوت الفوز
+        soundWin.play();
         let winAmount = currentBet * currentMultiplier;
         currentBalance += winAmount;
         document.getElementById('cashout-btn').style.display = 'none';
@@ -153,7 +160,8 @@
 
     async function finishGame() {
         clearInterval(gameInterval);
-        soundCrash.play(); // صوت الانفجار
+        soundTakeoff.pause(); // إيقاف صوت المحرك فوراً
+        soundCrash.play(); 
         const finalMult = currentMultiplier.toFixed(2);
         document.getElementById('multiplier').innerText = "CRASHED " + finalMult + "x";
         document.getElementById('multiplier').style.color = "#f85149";
