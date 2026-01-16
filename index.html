@@ -1,133 +1,128 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سباق الجمال الذكي</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <title>سباق الهجن الاحترافي</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #f4e4bc; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        input { width: 85%; padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
-        button { width: 90%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #218838; transform: scale(1.02); }
+        /* تنسيق عام واحترافي للواجهة */
+        body { font-family: 'Arial', sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #34495e; padding: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        input, button { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
+        button { background: #27ae60; color: white; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2ecc71; }
         #game-screen { display: none; }
-        #multiplier { font-size: 60px; color: #d9534f; margin: 30px 0; font-weight: 900; }
-        .info-bar { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; }
-        #status { margin-top: 15px; font-weight: bold; color: #555; }
+        .balance-box { font-size: 24px; color: #f1c40f; margin: 15px 0; font-weight: bold; }
+        .track { background: #d35400; height: 50px; margin: 10px 0; border-radius: 25px; position: relative; overflow: hidden; border: 2px solid #e67e22; }
+        .camel { width: 40px; height: 40px; position: absolute; left: 0; transition: left 0.5s linear; font-size: 30px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="card">
-        <h2 style="color: #8b4513;">🐪 سباق الجمال</h2>
-        <p>أدخل بيانات الحساب المشحون للبدء</p>
+<div class="container">
+    <div id="login-screen">
+        <h2>تسجيل الدخول للسباق</h2>
         <input type="text" id="user-input" placeholder="اسم المستخدم">
         <input type="password" id="pass-input" placeholder="كلمة السر">
         <button onclick="login()">دخول ومزامنة الرصيد</button>
-        <p id="login-error" style="color:red; margin-top:10px;"></p>
+        <p id="login-msg" style="color: #e74c3c;"></p>
     </div>
 
     <div id="game-screen">
-        <div id="multiplier">1.00x</div>
-        <div class="card">
-            <div class="info-bar">
-                <span>👤 <span id="display-name">---</span></span>
-                <span>💰 <span id="balance">0</span></span>
-            </div>
-            <p>حدد مبلغ الرهان:</p>
-            <input type="number" id="bet-amount" value="10" min="1">
-            <button id="btn-bet" onclick="startRace()">وضع الرهان</button>
-            <button id="btn-cashout" onclick="cashOut()" style="display:none; background:#ffc107; color:#333;">جني الأرباح</button>
-            <div id="status">جاهز للسباق...</div>
+        <div class="balance-box">رصيدك: <span id="user-balance">0</span> نقطة</div>
+        <input type="number" id="bet-amount" placeholder="مبلغ الرهان">
+        <div style="display: flex; justify-content: space-around;">
+            <button onclick="startRace(0)" style="background: #e67e22;">راهن على 🐫 1</button>
+            <button onclick="startRace(1)" style="background: #8e44ad;">راهن على 🐪 2</button>
         </div>
+
+        <div class="track"><div id="camel0" class="camel">🐫</div></div>
+        <div class="track"><div id="camel1" class="camel">🐪</div></div>
+        <p id="race-result"></p>
     </div>
+</div>
 
-    <script>
-        // ضع بيانات Supabase الخاصة بك هنا من صورتك رقم 1000009779
-        const SB_URL = "رابط_مشروعك_هنا"; 
-        const SB_KEY = "مفتاح_API_الخاص_بك";
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+<script>
+    // إعدادات الاتصال بـ Supabase
+    // تأكد من بقاء هذه القيم كما هي في مشروعك الأصلي
+    const SUPABASE_URL = 'https://mekdammaddouriueqiwu.supabase.co'; 
+    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // ضع مفتاح الـ API الخاص بك هنا
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let user = null;
-        let currentMult = 1.00;
-        let raceInterval;
-        let isRacing = false;
+    let currentUser = null;
 
-        async function login() {
-            const u = document.getElementById('user-input').value;
-            const p = document.getElementById('pass-input').value;
+    // وظيفة تسجيل الدخول (تتطابق مع الجداول الجديدة)
+    async function login() {
+        const username = document.getElementById('user-input').value;
+        const password = document.getElementById('pass-input').value;
 
-            const { data, error } = await supabase
-                .from('Profiles')
-                .select('*')
-                .eq('Username', u)
-                .eq('password', p)
-                .single();
+        // البحث في جدول Profiles عن تطابق الاسم وكلمة السر (حروف صغيرة)
+        const { data, error } = await supabase
+            .from('Profiles')
+            .select('*')
+            .eq('username', username)
+            .eq('password', password)
+            .single();
 
-            if (data) {
-                user = data;
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('game-screen').style.display = 'block';
-                document.getElementById('display-name').innerText = user.Username;
-                document.getElementById('balance').innerText = user.Balance;
-            } else {
-                document.getElementById('login-error').innerText = "بيانات خاطئة، تواصل مع الوكيل للشحن.";
+        if (data) {
+            currentUser = data;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('user-balance').innerText = currentUser.balance;
+        } else {
+            document.getElementById('login-msg').innerText = "خطأ في البيانات أو المستخدم غير موجود";
+        }
+    }
+
+    // وظيفة السباق ونظام الرهان
+    async function startRace(chosenCamel) {
+        const bet = parseInt(document.getElementById('bet-amount').value);
+        if (isNaN(bet) || bet > currentUser.balance || bet <= 0) {
+            alert("رصيدك غير كافٍ أو الرهان غير صحيح!");
+            return;
+        }
+
+        // خصم الرهان مبدئياً
+        currentUser.balance -= bet;
+        updateBalanceInDB(currentUser.balance);
+
+        // تحريك الجمال (محاكاة السباق)
+        let pos0 = 0, pos1 = 0;
+        const timer = setInterval(async () => {
+            pos0 += Math.random() * 10;
+            pos1 += Math.random() * 10;
+            document.getElementById('camel0').style.left = pos0 + '%';
+            document.getElementById('camel1').style.left = pos1 + '%';
+
+            if (pos0 >= 90 || pos1 >= 90) {
+                clearInterval(timer);
+                const winner = pos0 >= 90 ? 0 : 1;
+                handleResult(winner, chosenCamel, bet);
             }
+        }, 100);
+    }
+
+    async function handleResult(winner, chosen, bet) {
+        if (winner === chosen) {
+            const prize = bet * 2;
+            currentUser.balance += prize;
+            document.getElementById('race-result').innerText = "مبروك! فزت بـ " + prize + " نقطة";
+        } else {
+            document.getElementById('race-result').innerText = "للأسف خسرت الرهان.";
+            // إرسال الربح لجدول المدير عند خسارة اللاعب
+            await supabase.rpc('increment_admin_profit', { amount_to_add: bet });
         }
+        updateBalanceInDB(currentUser.balance);
+        document.getElementById('user-balance').innerText = currentUser.balance;
+    }
 
-        async function startRace() {
-            const amount = parseInt(document.getElementById('bet-amount').value);
-            if (amount > user.Balance || amount <= 0) return alert("رصيد غير كافٍ!");
-
-            isRacing = true;
-            user.Balance -= amount;
-            document.getElementById('balance').innerText = user.Balance;
-            
-            // تحديث الرصيد في القاعدة فوراً
-            await supabase.from('Profiles').update({ Balance: user.Balance }).eq('id', user.id);
-            // إضافة الربح لك كمدير في جدول Admin_states
-            await supabase.rpc('increment_admin_profit', { amount_to_add: amount });
-
-            document.getElementById('btn-bet').style.display = 'none';
-            document.getElementById('btn-cashout').style.display = 'block';
-            
-            currentMult = 1.00;
-            const crashPoint = (Math.random() * 5 + 1).toFixed(2); 
-
-            raceInterval = setInterval(() => {
-                currentMult += 0.01;
-                document.getElementById('multiplier').innerText = currentMult.toFixed(2) + "x";
-                document.getElementById('multiplier').style.color = "#28a745";
-
-                if (currentMult >= crashPoint) {
-                    endRace(false);
-                }
-            }, 100);
-        }
-
-        async function cashOut() {
-            if (!isRacing) return;
-            const winnings = Math.floor(parseInt(document.getElementById('bet-amount').value) * currentMult);
-            user.Balance += winnings;
-            endRace(true, winnings);
-        }
-
-        async function endRace(isWin, winAmount = 0) {
-            clearInterval(raceInterval);
-            isRacing = false;
-            document.getElementById('btn-bet').style.display = 'block';
-            document.getElementById('btn-cashout').style.display = 'none';
-
-            if (isWin) {
-                document.getElementById('status').innerText = `مبروك! ربحت ${winAmount}`;
-                document.getElementById('balance').innerText = user.Balance;
-                await supabase.from('Profiles').update({ Balance: user.Balance }).eq('id', user.id);
-            } else {
-                document.getElementById('multiplier').style.color = "red";
-                document.getElementById('status').innerText = "تحطم الجمل! خسر الرهان.";
-            }
-        }
-    </script>
+    async function updateBalanceInDB(newBalance) {
+        await supabase
+            .from('Profiles')
+            .update({ balance: newBalance })
+            .eq('id', currentUser.id);
+    }
+</script>
 </body>
 </html>
