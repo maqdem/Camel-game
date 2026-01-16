@@ -3,94 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سباق الهجن - تسجيل دخول</title>
+    <title>هجن كراش - Camel Crash</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .card { background: #2c3e50; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 10px; }
+        .card { background: #1e272e; padding: 20px; border-radius: 15px; max-width: 400px; margin: 10px auto; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #34495e; background: #000; color: #fff; direction: ltr; text-align: center; font-size: 18px; }
         
-        /* هذا الجزء يحل مشكلة الكتابة بالعكس */
-        input { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 10px 0; 
-            border-radius: 8px; 
-            border: 2px solid #34495e; 
-            background: #1a1a1a; 
-            color: white; 
-            box-sizing: border-box; 
-            direction: ltr; /* جعل الكتابة من اليسار لليمين لمنع قلب الحروف */
-            text-align: left; /* محاذاة النص لليسار */
-        }
+        #multiplier { font-size: 60px; color: #2ecc71; font-weight: bold; margin: 20px 0; }
+        .track { background: #edc9af; height: 120px; border-radius: 15px; position: relative; overflow: hidden; border: 4px solid #d4a373; margin: 20px 0; }
+        .camel { font-size: 50px; position: absolute; left: 10%; bottom: 10px; transition: transform 0.1s; }
         
-        button { width: 100%; padding: 12px; background: #27ae60; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
-        #game-ui { display: none; width: 100%; max-width: 500px; }
-        .track { background: #edc9af; padding: 10px; border-radius: 10px; margin-top: 20px; border: 3px solid #d4a373; position: relative; }
-        .lane { height: 50px; border-bottom: 1px dashed #fff; position: relative; }
-        .camel { font-size: 35px; position: absolute; left: 0; transition: 0.1s; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #bet-btn { background: #27ae60; color: white; }
+        #cashout-btn { background: #e67e22; color: white; display: none; }
+        
+        .status-msg { margin-top: 15px; font-weight: bold; }
+        #login-ui { display: block; }
+        #game-ui { display: none; }
     </style>
 </head>
 <body>
 
-<div id="login-container" class="card">
-    <h2 style="color: #2ecc71;">دخول المتسابقين</h2>
-    <input type="text" id="u" placeholder="اسم المستخدم (Username)">
-    <input type="password" id="p" placeholder="كلمة السر (Password)">
-    <button onclick="login()">دخول للمضمار</button>
-    <p id="msg" style="color: #e74c3c; margin-top: 10px;"></p>
+<div id="login-ui" class="card">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="u" placeholder="Username">
+    <input type="password" id="p" placeholder="Password">
+    <button onclick="login()" style="background:#2ecc71;">دخول</button>
+    <p id="login-msg" style="color:#e74c3c;"></p>
 </div>
 
 <div id="game-ui">
-    <div class="card" style="width: 100%;">
-        <h3>مرحباً <span id="user-display"></span></h3>
-        <div style="font-size: 28px; color: #f1c40f;">رصيدك: <span id="balance-display">0</span> 💰</div>
-        <hr>
-        <p>اختر ناقتك وابدأ السباق!</p>
-        <button onclick="startRace()" style="background: #e67e22;">ابدأ السباق الآن 🏁</button>
-    </div>
-    
-    <div class="track">
-        <div class="lane"><div id="c1" class="camel">🐪</div></div>
-        <div class="lane"><div id="c2" class="camel">🐪</div></div>
-        <div class="lane"><div id="c3" class="camel">🐪</div></div>
+    <div class="card">
+        <h3>المتسابق: <span id="user-display"></span></h3>
+        <div style="font-size: 24px; color: #f1c40f;">رصيدك: <span id="balance-display">0</span> 💰</div>
+        
+        <div id="multiplier">1.00x</div>
+        
+        <div class="track">
+            <div id="camel-actor" class="camel">🐪</div>
+        </div>
+
+        <div id="bet-controls">
+            <p>حدد مبلغ الرهان:</p>
+            <input type="number" id="bet-amount" value="10" min="1">
+            <button id="bet-btn" onclick="startGame()">ابدأ الرهان</button>
+            <button id="cashout-btn" onclick="cashOut()">اسحب الأرباح!</button>
+        </div>
+        
+        <p id="game-msg" class="status-msg"></p>
     </div>
 </div>
 
 <script>
     const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
-    const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'; // مفتاحك الصحيح
+    const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'; // مفتاحك الأحمر
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
+    let currentBalance = 0;
+    let username = "";
+    let gameInterval;
+    let currentMultiplier = 1.0;
+    let crashPoint = 0;
+    let isPlaying = false;
+    let currentBet = 0;
+
     async function login() {
-        const user = document.getElementById('u').value.trim();
-        const pass = document.getElementById('p').value.trim();
-        
-        // البحث في قاعدة البيانات
-        const { data, error } = await _supabase.from('Profiles')
-            .select('*').eq('username', user).eq('password', pass).single();
+        const u = document.getElementById('u').value.trim();
+        const p = document.getElementById('p').value.trim();
+        const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
 
         if (data) {
-            document.getElementById('login-container').style.display = 'none';
+            username = data.username;
+            currentBalance = data.balance;
+            document.getElementById('login-ui').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            document.getElementById('user-display').innerText = data.username;
-            document.getElementById('balance-display').innerText = data.balance;
+            updateUI();
         } else {
-            document.getElementById('msg').innerText = "بيانات الدخول غير صحيحة!";
+            document.getElementById('login-msg').innerText = "خطأ في البيانات!";
         }
     }
 
-    function startRace() {
-        // كود تحريك الهجن البسيط للتجربة
-        let p1=0, p2=0, p3=0;
-        const anim = setInterval(() => {
-            p1 += Math.random() * 3;
-            p2 += Math.random() * 3;
-            p3 += Math.random() * 3;
-            document.getElementById('c1').style.left = p1 + "%";
-            document.getElementById('c2').style.left = p2 + "%";
-            document.getElementById('c3').style.left = p3 + "%";
-            if(p1>=90 || p2>=90 || p3>=90) clearInterval(anim);
-        }, 50);
+    function updateUI() {
+        document.getElementById('user-display').innerText = username;
+        document.getElementById('balance-display').innerText = Math.floor(currentBalance);
+    }
+
+    async function startGame() {
+        currentBet = parseFloat(document.getElementById('bet-amount').value);
+        if (currentBet > currentBalance || currentBet <= 0) return alert("الرصيد غير كافٍ!");
+
+        isPlaying = true;
+        currentBalance -= currentBet; // خصم الرهان فوراً
+        updateUI();
+
+        // إخفاء زر الرهان وإظهار زر الانسحاب
+        document.getElementById('bet-btn').style.display = 'none';
+        document.getElementById('cashout-btn').style.display = 'block';
+        document.getElementById('game-msg').innerText = "ركضت الهجن.. انتبه!";
+        document.getElementById('game-msg').style.color = "#f1c40f";
+
+        currentMultiplier = 1.0;
+        crashPoint = (Math.random() * 5 + 1.1).toFixed(2); // نقطة الانفجار عشوائية بين 1.1 و 6.0
+        
+        gameInterval = setInterval(() => {
+            currentMultiplier += 0.02;
+            document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
+            
+            // تحريك الناقة بشكل اهتزازي
+            let shake = Math.random() * 5;
+            document.getElementById('camel-actor').style.transform = `translateX(${shake}px)`;
+
+            if (currentMultiplier >= crashPoint) {
+                gameOver();
+            }
+        }, 100);
+    }
+
+    async function cashOut() {
+        if (!isPlaying) return;
+        
+        let winAmount = currentBet * currentMultiplier;
+        currentBalance += winAmount;
+        isPlaying = false;
+        clearInterval(gameInterval);
+
+        document.getElementById('game-msg').innerText = `تم السحب! ربحت ${Math.floor(winAmount)} 💰`;
+        document.getElementById('game-msg').style.color = "#2ecc71";
+        
+        await finishGame();
+    }
+
+    async function gameOver() {
+        isPlaying = false;
+        clearInterval(gameInterval);
+        document.getElementById('multiplier').style.color = "#e74c3c";
+        document.getElementById('game-msg').innerText = "انفجرت (CRASH)! لقد خسرت الرهان.";
+        document.getElementById('game-msg').style.color = "#e74c3c";
+        
+        await finishGame();
+    }
+
+    async function finishGame() {
+        document.getElementById('bet-btn').style.display = 'block';
+        document.getElementById('cashout-btn').style.display = 'none';
+        
+        // تحديث الرصيد في قاعدة البيانات
+        await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
+        updateUI();
+
+        setTimeout(() => {
+            document.getElementById('multiplier').innerText = "1.00x";
+            document.getElementById('multiplier').style.color = "#2ecc71";
+        }, 3000);
     }
 </script>
 </body>
