@@ -36,6 +36,13 @@ body {
   box-shadow:0 15px 40px rgba(0,0,0,.6);
 }
 
+/* ===== تسجيل الدخول ===== */
+#login-ui {
+  text-align:center;
+  padding-top:100px;
+  width:320px;
+}
+
 /* ===== السباق ===== */
 .race-arena {
   height:260px;
@@ -54,7 +61,6 @@ body {
   font-weight:900;
   color:var(--accent);
   z-index:10;
-  text-shadow:0 0 20px rgba(0,255,136,.4);
 }
 
 /* ===== الجمل ===== */
@@ -113,29 +119,22 @@ button {
   cursor:pointer;
 }
 
-.run-btn {
-  background:var(--accent);
-  color:#000;
-}
-
-.cash-btn {
-  background:var(--danger);
-  color:white;
-}
+.run-btn { background:var(--accent); color:#000; }
+.cash-btn { background:var(--danger); color:white; }
 </style>
 </head>
 
 <body>
 
-<!-- ===== تسجيل الدخول ===== -->
-<div id="login-ui" style="text-align:center;padding-top:100px;width:320px;">
+<!-- ===== LOGIN ===== -->
+<div id="login-ui">
   <h2 style="color:var(--accent);margin-bottom:25px;">Bet Ahoul</h2>
   <input id="user-in" placeholder="اسم المستخدم" style="margin-bottom:12px;">
   <input id="pass-in" type="password" placeholder="كلمة السر">
   <button onclick="login()" class="run-btn" style="margin-top:15px;">دخول</button>
 </div>
 
-<!-- ===== اللعبة ===== -->
+<!-- ===== GAME ===== -->
 <div id="game-ui" class="app" style="display:none;">
   <div class="stats-bar">
     <span style="color:var(--gold)">💰 <span id="u-bal">0</span></span>
@@ -145,10 +144,134 @@ button {
   <div class="race-arena">
     <div id="multiplier">1.00x</div>
 
-    <!-- الجمل بالصورة الأصلية داخل SVG -->
     <div id="camel-actor" class="camel-container">
       <svg viewBox="0 0 400 287" xmlns="http://www.w3.org/2000/svg">
-        <image href="camel.png"
-               width="400"
-               height="287"
+        <image href="camel.png" width="400" height="287"
                preserveAspectRatio="xMidYMid meet"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input type="number" id="bet-amt" value="100">
+    <input type="number" id="guess-amt" value="2.0">
+    <button id="main-btn" onclick="handleGame()" class="run-btn">Run</button>
+  </div>
+</div>
+
+<script>
+/* ===== Supabase ===== */
+const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
+const supa = supabase.createClient(S_URL, S_KEY);
+
+/* ===== Elements ===== */
+const loginUI    = document.getElementById('login-ui');
+const gameUI     = document.getElementById('game-ui');
+const uBal       = document.getElementById('u-bal');
+const uName      = document.getElementById('u-name');
+const betAmt     = document.getElementById('bet-amt');
+const mainBtn    = document.getElementById('main-btn');
+const camelActor = document.getElementById('camel-actor');
+const multiplier = document.getElementById('multiplier');
+
+/* ===== State ===== */
+let bal = 0;
+let user = '';
+let gameTimer = null;
+let currentX = 1.0;
+let active = false;
+
+/* ===== Login ===== */
+async function login() {
+  const u = document.getElementById('user-in').value.trim();
+  const p = document.getElementById('pass-in').value.trim();
+
+  const { data } = await supa
+    .from('Profiles')
+    .select('*')
+    .eq('username', u)
+    .eq('password', p)
+    .single();
+
+  if (!data) {
+    alert("بيانات خاطئة!");
+    return;
+  }
+
+  user = data.username;
+  bal = data.balance;
+
+  loginUI.style.display = 'none';
+  gameUI.style.display = 'block';
+  updateUI();
+}
+
+function updateUI() {
+  uBal.innerText = Math.floor(bal);
+  uName.innerText = '@' + user;
+}
+
+/* ===== Game ===== */
+function handleGame() {
+  if (!active) startGame();
+  else cashOut();
+}
+
+function startGame() {
+  const b = +betAmt.value;
+  if (b <= 0 || b > bal) return alert("الرصيد لا يكفي");
+
+  bal -= b;
+  updateUI();
+
+  active = true;
+  currentX = 1.0;
+
+  const crash = (Math.random() * 5.5 + 1.05).toFixed(2);
+
+  mainBtn.innerText = "Cash Out";
+  mainBtn.className = "cash-btn";
+  camelActor.classList.add("running");
+
+  gameTimer = setInterval(() => {
+    currentX = +(currentX + 0.04).toFixed(2);
+    multiplier.innerText = currentX + "x";
+    camelActor.style.left = Math.min(10 + currentX * 12, 75) + "%";
+
+    if (currentX >= crash) stopGame(false);
+  }, 100);
+}
+
+async function cashOut() {
+  clearInterval(gameTimer);
+  bal += currentX * (+betAmt.value);
+  await supa.from('Profiles')
+    .update({ balance: Math.floor(bal) })
+    .eq('username', user);
+  stopGame(true);
+}
+
+function stopGame(win) {
+  clearInterval(gameTimer);
+  active = false;
+  camelActor.classList.remove("running");
+
+  if (!win) {
+    multiplier.style.color = "var(--danger)";
+    multiplier.innerText = "Crash! " + currentX + "x";
+  }
+
+  mainBtn.disabled = true;
+  setTimeout(() => {
+    mainBtn.disabled = false;
+    mainBtn.innerText = "Run";
+    mainBtn.className = "run-btn";
+    multiplier.style.color = "var(--accent)";
+    camelActor.style.left = "10%";
+  }, 2000);
+}
+</script>
+
+</body>
+</html>
