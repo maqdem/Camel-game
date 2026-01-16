@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طيارة الكراش - النسخة الاحترافية المصلحة</title>
+    <title>طيارة الكراش - النسخة الموسيقية الحماسية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -54,15 +54,18 @@
 </div>
 
 <script>
-    // إعداد الأصوات
-    const soundTakeoff = new Audio('https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3');
+    // إعداد المصادر الصوتية
+    const soundTakeoff = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3');
+    const soundEpicMusic = new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3'); // موسيقى حماسية
     const soundWin = new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3');
-    const soundCrash = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3');
+    const soundCrashExplosion = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); // صوت انفجار قوي
     const soundTick = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
-    // وظيفة لإيقاف جميع الأصوات فوراً
+    // جعل الموسيقى تعيد نفسها إذا طالت الجولة
+    soundEpicMusic.loop = true;
+
     function stopAllSounds() {
-        [soundTakeoff, soundWin, soundCrash, soundTick].forEach(s => {
+        [soundTakeoff, soundEpicMusic, soundWin, soundCrashExplosion, soundTick].forEach(s => {
             s.pause();
             s.currentTime = 0;
         });
@@ -94,7 +97,7 @@
     }
 
     function startNewRound() {
-        stopAllSounds(); // إيقاف صوت التحطم أو أي صوت من الجولة السابقة
+        stopAllSounds(); 
         isGameRunning = false; betPlaced = false; hasCashedOut = false; currentMultiplier = 1.0;
         
         document.getElementById('multiplier').style.display = 'none';
@@ -125,7 +128,11 @@
 
     async function launchPlane() {
         isGameRunning = true;
+        
+        // تشغيل الموسيقى الحماسية وصوت المحرك
+        soundEpicMusic.play();
         soundTakeoff.play();
+        
         document.getElementById('countdown-box').style.display = 'none';
         document.getElementById('multiplier').style.display = 'flex';
         document.getElementById('multiplier').style.color = "#00ff88";
@@ -160,8 +167,14 @@
 
     async function finishGame() {
         clearInterval(gameInterval);
-        soundTakeoff.pause(); // إيقاف صوت المحرك فوراً
-        soundCrash.play(); 
+        
+        // إيقاف الموسيقى والمحرك فوراً عند التحطم
+        soundEpicMusic.pause();
+        soundTakeoff.pause();
+        
+        // تشغيل صوت الانفجار الجديد
+        soundCrashExplosion.play(); 
+
         const finalMult = currentMultiplier.toFixed(2);
         document.getElementById('multiplier').innerText = "CRASHED " + finalMult + "x";
         document.getElementById('multiplier').style.color = "#f85149";
