@@ -1,36 +1,94 @@
-async function doLogin() {
-    const u = document.getElementById('user').value.trim();
-    const p = document.getElementById('pass').value.trim();
-    const btn = document.getElementById('login-btn');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سباق الهجن - النسخة المصلحة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #0b141a; color: white; text-align: center; padding: 20px; }
+        .box { background: #1c262d; padding: 25px; border-radius: 15px; max-width: 350px; margin: auto; border: 1px solid #2d333b; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #2d333b; background: #12191f; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-login { background: #28a745; color: white; margin-top: 10px; }
+        #game-ui { display: none; }
+        .sky { background: #12191f; height: 150px; border-radius: 10px; position: relative; margin: 15px 0; overflow: hidden; border: 1px solid #333; }
+        
+        /* صورة الجمل الخاصة بك مدمجة هنا */
+        .camel { 
+            width: 70px; height: 70px; 
+            position: absolute; left: 10px; bottom: 10px; 
+            background-size: contain; background-repeat: no-repeat;
+            background-image: url('data:image/jpeg;base64,/9j/4QCARXhpZgAATU0AKgAAAAgABAEAAAQAAAABAAABkAEBAAQAAAABAAABLAEyAAIAAAAUAAAAPodpAAQAAAABAAAAUgAAAAAyMDI2OjAxOjE2IDA3OjE5OjQ1AAABkAMAAgAAABQAAABkAAAAADIwMjY6MDE6MTYgMDc6MTk6MDEA/+AAEEpGSUYAAQEAAAEAAQAA/+IB2ElDQ19QUk9GSUxFAAEBAAAByAAAAAAEMAAAbW50clJHQiBYWVogB+AAAQABAAAAAAAAYWNzcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAPbWAAEAAAAA0y0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJZGVzYwAAAPAAAAAkclhZWgAAARQAAAAUZ1hZWgAAASgAAAAUYlhZWgAAATwAAAAUd3RwdAAAAVAAAAAUclRSQwAAAWQAAAAoZ1RSQwAAAWQAAAAoYlRSQwAAAWQAAAAoY3BydAAAAYwAAAA8bWx1YwAAAAAAAAABAAAADGVuVVMAAAAIAAAAHABzAFIARwBCWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPWFlaIAAAAAAAAPbWAAEAAAAA0y1wYXJhAAAAAAAEAAAAAmZmAADypwAADVkAABPQAAAKWwAAAAAAAAAAbWx1YwAAAAAAAAABAAAADGVuVVMAAAAgAAAAHABHAG8AbwBnAGwAZQAgAEkAbgBjAC4AIAAyADAAMQA2/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/9sAQwEDBAQFBAUJBQUJFA0LDRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU/8AAEQgBLAGQAwEiAAIRAQMRAf/EAB4AAQACAgMBAQEAAAAAAAAAAAAGCAUHAwQJAQIK/8QAWRAAAQMDAgQCBgQICAgKCwAAAQACAwQFEQYhBxIxQRNRCBQiQiQMHTHB8P/');
+        }
+    </style>
+</head>
+<body>
 
-    if(!u || !p) { alert("أدخل البيانات أولاً"); return; }
-    btn.innerText = "جاري التحقق...";
+<div id="login-ui" class="box">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="user" placeholder="اسم المستخدم">
+    <input type="password" id="pass" placeholder="كلمة السر">
+    <button onclick="doLogin()" id="login-btn" class="btn-login">دخول الآن</button>
+</div>
 
-    // هذا التعديل سيظهر لك رسالة الخطأ الحقيقية إذا فشل الاتصال
-    const { data, error } = await client
-        .from('Profiles')
-        .select('*')
-        .eq('username', u)
-        .eq('password', p)
-        .maybeSingle(); // استخدام maybeSingle أفضل لتجنب الأخطاء البرمجية
+<div id="game-ui" class="box">
+    <div style="display:flex; justify-content:space-between;">
+        <span id="name-tag"></span>
+        <span style="color:#ffcc00;">💰 <span id="bal-tag">0</span></span>
+    </div>
+    <h1 id="mult-text" style="font-size: 50px; color: #00ff88;">1.00x</h1>
+    <div class="sky">
+        <div id="camel-graphic" class="camel"></div>
+    </div>
+    <button id="action-btn" class="btn-login" style="background:#dc3545">سحب الرصيد</button>
+</div>
 
-    if (error) {
-        console.error(error);
-        alert("خطأ من Supabase: " + error.message); // سيخبرك هنا بالسبب الحقيقي للرفض
-        btn.innerText = "دخول الآن";
-        return;
+<script>
+    // بيانات الربط الخاصة بك
+    const URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+    const KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
+    const client = supabase.createClient(URL, KEY);
+
+    async function doLogin() {
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+        const btn = document.getElementById('login-btn');
+
+        if(!u || !p) return alert("يرجى ملء البيانات");
+        btn.innerText = "جاري الاتصال...";
+
+        try {
+            // بحث دقيق في جدول Profiles
+            const { data, error } = await client
+                .from('Profiles')
+                .select('*')
+                .eq('username', u)
+                .eq('password', p)
+                .maybeSingle();
+
+            if (error) {
+                console.error(error);
+                alert("خطأ من السيرفر: " + error.message);
+                btn.innerText = "دخول الآن";
+                return;
+            }
+
+            if (data) {
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('name-tag').innerText = data.username;
+                document.getElementById('bal-tag').innerText = data.balance;
+                // هنا تبدأ اللعبة...
+            } else {
+                alert("اسم المستخدم أو كلمة السر غير صحيحة");
+                btn.innerText = "دخول الآن";
+            }
+        } catch (err) {
+            alert("فشل النظام في الوصول للقاعدة");
+            btn.innerText = "دخول الآن";
+        }
     }
-
-    if (!data) {
-        alert("اسم المستخدم أو كلمة السر غير صحيحة");
-        btn.innerText = "دخول الآن";
-    } else {
-        myUser = data.username;
-        myBal = data.balance;
-        document.getElementById('login-ui').style.display = 'none';
-        document.getElementById('game-ui').style.display = 'block';
-        document.getElementById('name-tag').innerText = myUser;
-        document.getElementById('bal-tag').innerText = Math.floor(myBal);
-        startRound();
-    }
-}
+</script>
+</body>
+</html>
