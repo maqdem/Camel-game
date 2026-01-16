@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رادار الطيران - النسخة الاحترافية المصلحة</title>
+    <title>رادار الطيران - نسخة الـ 700x</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
@@ -69,9 +69,6 @@
     const s_music = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3'); 
     const s_crash = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
     const s_win = new Audio('https://www.soundjay.com/buttons/sounds/button-37.mp3');
-
-    let currentBalance, username, gameInterval, countdownInterval;
-    let currentMultiplier = 1.0, crashPoint = 0, betPlaced = false, cashedOut = false, currentBet = 0;
 
     function unlockAudio() {
         [s_tick, s_music, s_crash, s_win].forEach(s => {
@@ -160,13 +157,32 @@
             btn.innerText = "بدأت الرحلة.."; btn.disabled = true;
         }
 
-        crashPoint = (Math.random() * (Math.random() > 0.8 ? 10 : 3) + 1.1).toFixed(2);
+        // منطق الاحتمالات المتطور مع حد أقصى 700x
+        let chance = Math.random() * 100;
+        if (chance <= 70) {
+            crashPoint = (Math.random() * (4 - 1.1) + 1.1).toFixed(2);
+        } else if (chance <= 90) {
+            crashPoint = (Math.random() * (10 - 4) + 4).toFixed(2);
+        } else if (chance <= 99.9) {
+            crashPoint = (Math.random() * (100 - 10) + 10).toFixed(2);
+        } else {
+            // فرصة 0.1% للوصول إلى 700x
+            crashPoint = (Math.random() * (700 - 100) + 100).toFixed(2);
+        }
+
         gameInterval = setInterval(() => {
-            currentMultiplier += (currentMultiplier < 4 ? 0.02 : 0.07);
+            // تسريع العداد تدريجياً لضمان عدم استغراق الجولات الطويلة وقتاً مملاً
+            let increment = 0.02;
+            if (currentMultiplier > 10) increment = 0.5;
+            if (currentMultiplier > 50) increment = 2.0;
+            if (currentMultiplier > 200) increment = 5.0;
+
+            currentMultiplier += increment;
             document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
             
             if (betPlaced && !cashedOut) updateCashoutText();
 
+            // تحريك الطائرة بشكل انسيابي
             let lift = Math.min(currentMultiplier * 6, 80);
             let drift = Math.min(currentMultiplier * 3, 50);
             document.getElementById('plane-img').style.transform = `translate(${drift}px, -${lift}px)`;
@@ -215,7 +231,12 @@
     function addHistory(val) {
         const list = document.getElementById('history-list');
         const item = document.createElement('div');
-        item.className = `hist-tag ${val >= 2 ? 'green' : 'red'}`;
+        // تلوين التاريخ بناءً على قوة الرقم
+        let colorClass = 'red';
+        if (val >= 2) colorClass = 'green';
+        if (val >= 10) item.style.border = "1px solid #ffcc00"; // تمييز الأرقام الكبيرة
+        
+        item.className = `hist-tag ${colorClass}`;
         item.innerText = val + "x";
         list.prepend(item);
         if (list.children.length > 8) list.lastChild.remove();
