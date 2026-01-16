@@ -3,78 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام دخول سباق الهجن</title>
+    <title>سباق الهجن - تسجيل دخول</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 320px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: #27ae60; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #252525; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #27ae60; }
-        button { width: 100%; padding: 12px; background: #27ae60; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #2ecc71; }
-        #status { margin-top: 15px; font-size: 14px; min-height: 20px; }
-        .balance-box { font-size: 32px; color: #f1c40f; margin: 20px 0; font-weight: bold; }
-        .success-text { color: #2ecc71; margin-bottom: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #2c3e50; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        
+        /* هذا الجزء يحل مشكلة الكتابة بالعكس */
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border: 2px solid #34495e; 
+            background: #1a1a1a; 
+            color: white; 
+            box-sizing: border-box; 
+            direction: ltr; /* جعل الكتابة من اليسار لليمين لمنع قلب الحروف */
+            text-align: left; /* محاذاة النص لليسار */
+        }
+        
+        button { width: 100%; padding: 12px; background: #27ae60; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
+        #game-ui { display: none; width: 100%; max-width: 500px; }
+        .track { background: #edc9af; padding: 10px; border-radius: 10px; margin-top: 20px; border: 3px solid #d4a373; position: relative; }
+        .lane { height: 50px; border-bottom: 1px dashed #fff; position: relative; }
+        .camel { font-size: 35px; position: absolute; left: 0; transition: 0.1s; }
     </style>
 </head>
 <body>
 
-<div class="card" id="app-container">
-    <div id="login-form">
-        <h2>تسجيل الدخول</h2>
-        <input type="text" id="username" placeholder="اسم المستخدم">
-        <input type="password" id="password" placeholder="كلمة السر">
-        <button onclick="handleLogin()">دخول ومزامنة الرصيد</button>
-        <p id="status"></p>
+<div id="login-container" class="card">
+    <h2 style="color: #2ecc71;">دخول المتسابقين</h2>
+    <input type="text" id="u" placeholder="اسم المستخدم (Username)">
+    <input type="password" id="p" placeholder="كلمة السر (Password)">
+    <button onclick="login()">دخول للمضمار</button>
+    <p id="msg" style="color: #e74c3c; margin-top: 10px;"></p>
+</div>
+
+<div id="game-ui">
+    <div class="card" style="width: 100%;">
+        <h3>مرحباً <span id="user-display"></span></h3>
+        <div style="font-size: 28px; color: #f1c40f;">رصيدك: <span id="balance-display">0</span> 💰</div>
+        <hr>
+        <p>اختر ناقتك وابدأ السباق!</p>
+        <button onclick="startRace()" style="background: #e67e22;">ابدأ السباق الآن 🏁</button>
+    </div>
+    
+    <div class="track">
+        <div class="lane"><div id="c1" class="camel">🐪</div></div>
+        <div class="lane"><div id="c2" class="camel">🐪</div></div>
+        <div class="lane"><div id="c3" class="camel">🐪</div></div>
     </div>
 </div>
 
 <script>
-    // إعدادات الربط بمشروعك
-    const SUPABASE_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
-    const SUPABASE_KEY = 'Sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'; 
+    const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+    const S_KEY = 'Sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'; // مفتاحك الصحيح
+    const _supabase = supabase.createClient(S_URL, S_KEY);
 
-    // إنشاء عميل الاتصال
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    async function handleLogin() {
-        const userField = document.getElementById('username').value;
-        const passField = document.getElementById('password').value;
-        const statusMsg = document.getElementById('status');
+    async function login() {
+        const user = document.getElementById('u').value.trim();
+        const pass = document.getElementById('p').value.trim();
         
-        if (!userField || !passField) {
-            statusMsg.innerText = "يرجى إدخال البيانات كاملة";
-            statusMsg.style.color = "#e74c3c";
-            return;
-        }
-
-        statusMsg.innerText = "جاري الاتصال بقاعدة البيانات...";
-        statusMsg.style.color = "#f1c40f";
-
-        // البحث عن اللاعب في جدول Profiles
-        const { data, error } = await _supabase
-            .from('Profiles')
-            .select('*')
-            .eq('username', userField)
-            .eq('password', passField)
-            .single();
+        // البحث في قاعدة البيانات
+        const { data, error } = await _supabase.from('Profiles')
+            .select('*').eq('username', user).eq('password', pass).single();
 
         if (data) {
-            // تحديث الشاشة عند نجاح الدخول
-            document.getElementById('app-container').innerHTML = `
-                <div class="success-text">تم الاتصال بنجاح ✅</div>
-                <h3>أهلاً بك، ${data.username}</h3>
-                <div class="balance-box">💰 ${data.balance}</div>
-                <p style="font-size:12px; color:#888;">بياناتك متزامنة مع Supabase</p>
-                <button onclick="location.reload()" style="background:#e67e22; margin-top:10px;">تسجيل الخروج</button>
-            `;
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            document.getElementById('user-display').innerText = data.username;
+            document.getElementById('balance-display').innerText = data.balance;
         } else {
-            // في حال وجود خطأ
-            statusMsg.style.color = "#e74c3c";
-            statusMsg.innerText = "خطأ: اسم المستخدم أو كلمة السر غير صحيحة";
-            console.error("Supabase Error:", error);
+            document.getElementById('msg').innerText = "بيانات الدخول غير صحيحة!";
         }
+    }
+
+    function startRace() {
+        // كود تحريك الهجن البسيط للتجربة
+        let p1=0, p2=0, p3=0;
+        const anim = setInterval(() => {
+            p1 += Math.random() * 3;
+            p2 += Math.random() * 3;
+            p3 += Math.random() * 3;
+            document.getElementById('c1').style.left = p1 + "%";
+            document.getElementById('c2').style.left = p2 + "%";
+            document.getElementById('c3').style.left = p3 + "%";
+            if(p1>=90 || p2>=90 || p3>=90) clearInterval(anim);
+        }, 50);
     }
 </script>
 </body>
