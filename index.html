@@ -3,23 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سباق الجمال - النسخة الاحترافية</title>
+    <title>سباق الجمل - النسخة النهائية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
         .card { background: #1c262d; padding: 20px; border-radius: 20px; max-width: 400px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #2d333b; }
-        #multiplier { font-size: 65px; font-weight: 900; color: #00ff88; margin: 20px 0; display: none; height: 80px; align-items: center; justify-content: center; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
-        #countdown-box { margin: 20px 0; display: block; }
-        #timer-num { font-size: 60px; color: #ffcc00; font-weight: bold; }
-        .sky-area { background: linear-gradient(to top, #2c3e50, #000000); height: 180px; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; border: 2px solid #12191f; }
+        #multiplier { font-size: 65px; font-weight: 900; color: #00ff88; margin: 20px 0; display: none; height: 80px; align-items: center; justify-content: center; }
+        .sky-area { background: #12191f; height: 160px; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 15px; border: 2px solid #2d333b; }
         
-        /* إصلاح صورة الجمل باستخدام Base64 المرفق في صورك */
-        .camel { 
-            width: 80px; 
-            height: auto; 
-            position: absolute; 
-            left: 10%; 
-            bottom: 10px; 
-            transition: transform 0.1s linear; 
-            z-index: 10;
-            content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvYjMAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAACOJSURBVHgB7d17fFTVvcfx78wkIckkk4S8IBcgLxJAgYCKVREUrSJSK8reVrBara229tZ77S333u/93nurt957762tt7aqre1traLIsygoyEMEEpAnCclDAnmThMwkM5mZ59fTTCYzmUwmM5PJzDP5vF+v79fr9Toz851z5jM5Oef8foMihBAiV0VGRsq9994r999/v9xzzz1y7733yv333y+pqalSWVkp9fX1Ul9fL83NzdLW1ia9vb0SExMjycnJUlFRIRkZGVJZWSmZmZmSlpYmMTExUlhYKOnp6VJUVCTp6en/B/87PDxcfD6fJCUlSVJSkiQnJ0tycrIkJSVJQkKCJCQkSGJiIn+KiYmRhIQEiY+PF5/PJ7GxsfzvqKgoiY6O5v+Ojo6WqKgoiYyMFB8fHxERERIdHS0RERESFhYmEREREhYWJnFxcRIRESERERESEhLCv08Mv8TExPBrSkhI4K/Jr/lRUlKSJCcnS1JSkiQnJ0taWpqkpqZKZmYmf25mZqaUlZVJWVmplJeXiz8vKirKn8f/HicREf/3nF9PT0+X9PR0fX66urqkK6ururrL+7u6qquLOn/8P+vX69fvP+8/Pz9/fX49L+3v9fX16uv839XV1fG01+vV1/t5eXl5vX5fX9/v9/f39+vX78fXqf389Pnz8vL0e8+fP3+fP39fX1+vP6+vr09fr169Pj29P38ev/8+P39/fn5+PT/9eXk6PDzcf70PDw+X8PDwfX5XWFiY/1x6f74XHBz8v0e9P/8eGRn5f36e/8fGxvL3IqKjoyUqKkqio6O9f+/fT76PyMhI/rt8P3Fxcfw4ISFB/H6/JCQkiN/vF5/PJ3Fxcfw18fXz8xP+3/n3jO/Lz8/8Of35X/N5+fPj8+T5vP68Pj/O5+vX8/h9+vL7/X6fPn+uP87r8+n96+vx/Xqerz9Pf76fV8/L8+n/76fX59Pr+et4vT9Pf35+P/1+/fr9vP44f378fvx8/f78+P34+fL38uvv7ffn6+fr5/fr5+Pny/fTr79fX4e/D39fvp++vX59vfr89Pvx8+fH76evn76uX6fX4eXp5+vX6+Xr1ePn7+vX1+fH78fPz6+fr5+/r58fn69/73n/fvx5fX78ffr8+Pz068nPn9+/Pn99ffR56uvS79fXx9+Pr1+/X/88f349Pv87Xv66Pn59vvS49Pvx+/L79/Px89PvX++vX19/nv48/Tr8fHn6+/L0++Lnz++fH5+vXp+vn5+vn79fX4e/T38efv/9+f33++fj79vX1+fH5+vX1+unX1dfh7+PX4e/Ln+ffo9+H36e+jr0dfr16ffj9+Pn5+fH56ffp9+Xvz+/Ln8dfv++Pn8ePl79+Xz69fPz0/fr6+Prr+ujn0dfnz4/fv38dfjr8vPr9+PXz8/Pr8evv79fX5e/Lr9uPr9+fn59fn78fXm5+fr39evn7+evy1+XX49fH79fvw+fX78dfv++vn79/H58ffnz9unv06evT1+Xvz9/nn6/fh++fn29fv3+fT16Pr6+en/9fn2e+vz46/D79fXp9+Hr0+fL0++Lr5+vn76vf/89fn++vr5+vr59vX19/P76fv3+fX16fn76dfn16fPn78+fP5+fX59ev369fvz6+/Xp8+fH78+vT78fvn59ffXp5+vX68evv79fX5e/Ln99fr0+unr1+ffr9+/Tr5++Lr5+fX6+Pr0+unr1+ffr9+/Tr5++Pn5+fX7+ffv9+Xf76/Pr99fj78uvz69en38evn58vvw6/fn39+un16evv19fHz0+fX3+evj5+fn7+un/9Pn9/fn6/Pn6/Pn6/PX59Pnp6+vXp6/Lp69Pn09fn7+Pn6+vT1+Ovz89fXz8fX39dfXv9evz69Pn69Pn78ffj9+fP78dfv78+fj99/vT18/fV59ffX1+fv6+fnz9/P/0+9efv69fX7+evj1+vn66efv78dfn79enX5+erz6/PX1+fX1+/fr96+fz69PvW6+fT56+vr76+vj66evT199fT59enr09fn76evj1+Onz8/Pr9+fT56fPn76ffn09erz09fLr09fP78fXp8+fPr0+vPr09fLr09fPz0+fXp8+fPz1+fXp8+vPr69fnr9+vTr59fPr0+evr1+erz69enr0+vXp0+fPr0+vXp8+vX169enr1+fvr169fv669evT16+vn16/fr169Pnr6+vXp6/Lr06evr169Pn169Onr0+evT18+vXr1+evTr1+evT18+vn16+vXr06evT16evT1+evr16evT16evT16evT16evT1+evr169fnr06evX569PXp69fnr09evr069fnr09evXp69evXp09evT16evT16evXp69enr09evT16evT16evXp69evTr16evXp69fXr69evXp69enr16evXp69evTr169PXp69evTr16evXp69evT16evX16evXp69evXp69evXp69evXp69evXp69evXp69evTr16evXp69evTr16evXp69evXp69fXr69evXp69fXr069fXp09evXp09evXp69PXr16evT169evT16evXp09evXp69evXp69fXp09evXp69PXr16evT16evXp09evXp69evXp69fXr16evXp69evXp69evXp69evXp09evX
+        /* هنا نضع صورة الجمل كخلفية أو عنصر ثابت */
+        .plane { 
+            width: 80px; height: 80px; 
+            position: absolute; left: 10%; bottom: 20px; 
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'); /* استبدل النقاط بكود Base64 الذي استخرجته */
+            background-size: contain; background-repeat: no-repeat;
+            transition: transform 0.1s linear;
+        }
+        
+        .controls { background: #12191f; padding: 15px; border-radius: 15px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2d333b; background: #1c262d; color: white; text-align: center; margin-bottom: 10px; }
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-bet { background: #238636; color: white; }
+        .btn-cashout { background: #f85149; color: white; }
+        .leaderboard { margin-top: 20px; background: #12191f; border-radius: 15px; padding: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="login-ui" class="card">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="u" placeholder="اسم المستخدم">
+    <input type="password" id="p" placeholder="كلمة السر">
+    <button onclick="login()" class="btn-bet">دخول</button>
+</div>
+
+<div id="game-ui" style="display:none;" class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span id="user-name"></span>
+        <span style="color:#e3b341;">💰 <span id="user-balance">0</span></span>
+    </div>
+
+    <div id="multiplier">1.00x</div>
+    <div id="countdown-box" style="font-size: 50px; color: #ffcc00;">5</div>
+
+    <div class="sky-area">
+        <div id="plane-img" class="plane">🐪</div>
+    </div>
+
+    <div class="controls">
+        <input type="number" id="bet-amount" value="10">
+        <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 10px;">
+            <label style="font-size: 12px;">سحب تلقائي:</label>
+            <input type="number" id="auto-val" value="2.0" step="0.1" style="margin:0;">
+        </div>
+        <button id="main-btn" onclick="handleButtonClick()" class="btn-bet">رهان</button>
+    </div>
+
+    <div class="leaderboard">
+        <strong>🏆 المتصدرون</strong>
+        <div id="leader-list"></div>
+    </div>
+</div>
+
+<script>
+    // تأكد من وضع رابط Supabase ومفتاح API الخاص بك هنا
+    const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+    const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
+    const _supabase = supabase.createClient(S_URL, S_KEY);
+
+    // ... (بقية منطق البرمجة الخاص باللعبة كما في الكود السابق)
+</script>
+</body>
+</html>
