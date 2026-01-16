@@ -1,128 +1,75 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سباق الهجن الاحترافي</title>
+    <title>نظام سباق الهجن</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* تنسيق عام واحترافي للواجهة */
-        body { font-family: 'Arial', sans-serif; background: #2c3e50; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: #34495e; padding: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        input, button { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
-        button { background: #27ae60; color: white; cursor: pointer; font-weight: bold; }
-        button:hover { background: #2ecc71; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px; border: 1px solid #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #252525; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #27ae60; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
         #game-screen { display: none; }
-        .balance-box { font-size: 24px; color: #f1c40f; margin: 15px 0; font-weight: bold; }
-        .track { background: #d35400; height: 50px; margin: 10px 0; border-radius: 25px; position: relative; overflow: hidden; border: 2px solid #e67e22; }
-        .camel { width: 40px; height: 40px; position: absolute; left: 0; transition: left 0.5s linear; font-size: 30px; }
+        .balance { font-size: 28px; color: #f1c40f; margin: 20px 0; }
+        .status { color: #2ecc71; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="card">
     <div id="login-screen">
-        <h2>تسجيل الدخول للسباق</h2>
+        <h2 style="color: #27ae60;">تسجيل الدخول</h2>
         <input type="text" id="user-input" placeholder="اسم المستخدم">
         <input type="password" id="pass-input" placeholder="كلمة السر">
-        <button onclick="login()">دخول ومزامنة الرصيد</button>
-        <p id="login-msg" style="color: #e74c3c;"></p>
+        <button onclick="login()">دخول ومزامنة</button>
+        <p id="msg" style="color: #e74c3c; font-size: 14px; margin-top: 10px;"></p>
     </div>
 
     <div id="game-screen">
-        <div class="balance-box">رصيدك: <span id="user-balance">0</span> نقطة</div>
-        <input type="number" id="bet-amount" placeholder="مبلغ الرهان">
-        <div style="display: flex; justify-content: space-around;">
-            <button onclick="startRace(0)" style="background: #e67e22;">راهن على 🐫 1</button>
-            <button onclick="startRace(1)" style="background: #8e44ad;">راهن على 🐪 2</button>
-        </div>
-
-        <div class="track"><div id="camel0" class="camel">🐫</div></div>
-        <div class="track"><div id="camel1" class="camel">🐪</div></div>
-        <p id="race-result"></p>
+        <h3 id="welcome-msg"></h3>
+        <div class="balance">رصيدك: <span id="user-balance">0</span> 💰</div>
+        <p class="status">متصل بقاعدة البيانات ✅</p>
+        <button onclick="location.reload()" style="background: #e67e22;">تسجيل الخروج</button>
     </div>
 </div>
 
 <script>
-    // إعدادات الاتصال بـ Supabase
-    // تأكد من بقاء هذه القيم كما هي في مشروعك الأصلي
-    const SUPABASE_URL = 'https://mekdammaddouriueqiwu.supabase.co'; 
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // ضع مفتاح الـ API الخاص بك هنا
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // المعلومات المستخرجة من صورتك الأخيرة
+    const SUPABASE_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
+    
+    // ملاحظة: بما أن المفتاح مخفي في صورتك، ستحتاج لوضع المفتاح الذي يظهر في صفحة API Settings 
+    // تحت مسمى "anon public" مكان النص أدناه.
+    const SUPABASE_KEY = 'ضـع_مـفـتـاح_ANON_هـنـا'; 
 
-    let currentUser = null;
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // وظيفة تسجيل الدخول (تتطابق مع الجداول الجديدة)
     async function login() {
-        const username = document.getElementById('user-input').value;
-        const password = document.getElementById('pass-input').value;
+        const u = document.getElementById('user-input').value;
+        const p = document.getElementById('pass-input').value;
+        const msg = document.getElementById('msg');
 
-        // البحث في جدول Profiles عن تطابق الاسم وكلمة السر (حروف صغيرة)
-        const { data, error } = await supabase
+        msg.innerText = "جاري التحقق...";
+
+        // استعلام من جدول Profiles (كما أنشأته في الصورة 1000009795.jpg)
+        const { data, error } = await _supabase
             .from('Profiles')
             .select('*')
-            .eq('username', username)
-            .eq('password', password)
+            .eq('username', u)
+            .eq('password', p)
             .single();
 
         if (data) {
-            currentUser = data;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
-            document.getElementById('user-balance').innerText = currentUser.balance;
+            document.getElementById('welcome-msg').innerText = "أهلاً بك " + data.username;
+            document.getElementById('user-balance').innerText = data.balance;
         } else {
-            document.getElementById('login-msg').innerText = "خطأ في البيانات أو المستخدم غير موجود";
+            msg.innerText = "خطأ: تأكد من الاسم وكلمة السر!";
+            console.error(error);
         }
-    }
-
-    // وظيفة السباق ونظام الرهان
-    async function startRace(chosenCamel) {
-        const bet = parseInt(document.getElementById('bet-amount').value);
-        if (isNaN(bet) || bet > currentUser.balance || bet <= 0) {
-            alert("رصيدك غير كافٍ أو الرهان غير صحيح!");
-            return;
-        }
-
-        // خصم الرهان مبدئياً
-        currentUser.balance -= bet;
-        updateBalanceInDB(currentUser.balance);
-
-        // تحريك الجمال (محاكاة السباق)
-        let pos0 = 0, pos1 = 0;
-        const timer = setInterval(async () => {
-            pos0 += Math.random() * 10;
-            pos1 += Math.random() * 10;
-            document.getElementById('camel0').style.left = pos0 + '%';
-            document.getElementById('camel1').style.left = pos1 + '%';
-
-            if (pos0 >= 90 || pos1 >= 90) {
-                clearInterval(timer);
-                const winner = pos0 >= 90 ? 0 : 1;
-                handleResult(winner, chosenCamel, bet);
-            }
-        }, 100);
-    }
-
-    async function handleResult(winner, chosen, bet) {
-        if (winner === chosen) {
-            const prize = bet * 2;
-            currentUser.balance += prize;
-            document.getElementById('race-result').innerText = "مبروك! فزت بـ " + prize + " نقطة";
-        } else {
-            document.getElementById('race-result').innerText = "للأسف خسرت الرهان.";
-            // إرسال الربح لجدول المدير عند خسارة اللاعب
-            await supabase.rpc('increment_admin_profit', { amount_to_add: bet });
-        }
-        updateBalanceInDB(currentUser.balance);
-        document.getElementById('user-balance').innerText = currentUser.balance;
-    }
-
-    async function updateBalanceInDB(newBalance) {
-        await supabase
-            .from('Profiles')
-            .update({ balance: newBalance })
-            .eq('id', currentUser.id);
     }
 </script>
+
 </body>
 </html>
