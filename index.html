@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رادار الطيران - النسخة الاحترافية</title>
+    <title>رادار الطيران - نسخة الموسيقى المصلحة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
@@ -64,16 +64,23 @@
     const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
-    // تعريف الأصوات
+    // تعريف الأصوات بروابط مباشرة وموثوقة
     const s_tick = new Audio('https://www.soundjay.com/buttons/sounds/button-50.mp3');
     const s_music = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3'); 
     const s_crash = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
     const s_win = new Audio('https://www.soundjay.com/buttons/sounds/button-37.mp3');
 
+    // تفعيل الأصوات مسبقاً لتجاوز حظر المتصفح
+    function unlockAudio() {
+        s_music.play().then(() => { s_music.pause(); s_music.currentTime = 0; }).catch(() => {});
+        s_tick.play().then(() => { s_tick.pause(); s_tick.currentTime = 0; }).catch(() => {});
+    }
+
     let currentBalance, username, gameInterval, countdownInterval;
     let currentMultiplier = 1.0, crashPoint = 0, isBetting = false, hasCashedOut = false, currentBet = 0;
 
     async function login() {
+        unlockAudio(); // تفعيل الصوت عند أول ضغطة
         const u = document.getElementById('u').value.trim();
         const p = document.getElementById('p').value.trim();
         const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
@@ -93,14 +100,12 @@
     }
 
     function startNewRound() {
-        // تنظيف شامل للجولة السابقة
         clearInterval(gameInterval);
         clearInterval(countdownInterval);
         isBetting = false;
         hasCashedOut = false;
         currentMultiplier = 1.0;
         
-        // ضبط الواجهة
         document.getElementById('multiplier').style.display = 'none';
         document.getElementById('multiplier').style.color = "#00ff88";
         document.getElementById('countdown-box').style.display = 'block';
@@ -125,6 +130,7 @@
     }
 
     function placeBet() {
+        unlockAudio(); // تأكيد تفعيل الصوت
         let amt = parseFloat(document.getElementById('bet-amount').value);
         if (amt > currentBalance || amt <= 0) return alert("الرصيد غير كافٍ");
         currentBet = amt;
@@ -137,8 +143,15 @@
         document.getElementById('countdown-box').style.display = 'none';
         document.getElementById('multiplier').style.display = 'flex';
         document.getElementById('multiplier').innerText = "1.00x";
-        s_music.play().catch(()=>{}); // بدء موسيقى الطيران
+        
+        // تشغيل الموسيقى
+        s_music.currentTime = 0;
         s_music.loop = true;
+        let playPromise = s_music.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.catch(error => { console.log("تحتاج لتفاعل المستخدم لتشغيل الصوت"); });
+        }
 
         if (isBetting) {
             currentBalance -= currentBet;
@@ -177,8 +190,8 @@
     function triggerCrash() {
         clearInterval(gameInterval);
         s_music.pause();
-        s_music.currentTime = 0; // إنهاء الموسيقى
-        s_crash.play().catch(()=>{}); // صوت التحطم
+        s_music.currentTime = 0; 
+        s_crash.play().catch(()=>{}); 
 
         const final = currentMultiplier.toFixed(2);
         document.getElementById('multiplier').innerText = "💥 " + final + "x";
