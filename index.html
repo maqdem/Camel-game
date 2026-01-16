@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طيارة الكراش - النسخة الموسيقية الحماسية</title>
+    <title>طيارة الكراش - نظام الصوت المطور</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: white; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -54,14 +54,15 @@
 </div>
 
 <script>
-    // إعداد المصادر الصوتية
+    // أصوات النظام
     const soundTakeoff = new Audio('https://www.soundjay.com/transportation/sounds/jet-passing-by-01.mp3');
-    const soundEpicMusic = new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3'); // موسيقى حماسية
-    const soundWin = new Audio('https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3');
-    const soundCrashExplosion = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); // صوت انفجار قوي
-    const soundTick = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    const soundEpicMusic = new Audio('https://cdn.pixabay.com/audio/2024/05/22/audio_51a2e7e39f.mp3'); // موسيقى سينمائية أسرع
+    const soundWin = new Audio('https://www.soundjay.com/button/sounds/button-37.mp3');
+    
+    // صوت التحطم الجديد (انفجار قوي)
+    const soundCrashExplosion = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
+    const soundTick = new Audio('https://www.soundjay.com/button/sounds/button-50.mp3');
 
-    // جعل الموسيقى تعيد نفسها إذا طالت الجولة
     soundEpicMusic.loop = true;
 
     function stopAllSounds() {
@@ -83,118 +84,4 @@
         const p = document.getElementById('p').value.trim();
         const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
         if (data) {
-            username = data.username; currentBalance = data.balance;
-            document.getElementById('login-ui').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-            updateUI();
-            startNewRound();
-        }
-    }
-
-    function updateUI() {
-        document.getElementById('user-display').innerText = username;
-        document.getElementById('balance-display').innerText = Math.floor(currentBalance);
-    }
-
-    function startNewRound() {
-        stopAllSounds(); 
-        isGameRunning = false; betPlaced = false; hasCashedOut = false; currentMultiplier = 1.0;
-        
-        document.getElementById('multiplier').style.display = 'none';
-        document.getElementById('countdown-box').style.display = 'block';
-        document.getElementById('bet-area').style.display = 'block';
-        document.getElementById('bet-btn').disabled = false;
-        document.getElementById('cashout-btn').style.display = 'none';
-        document.getElementById('win-status').innerText = "";
-        document.getElementById('plane-actor').style.transform = "translateY(0) rotate(0)";
-
-        let timeLeft = 5;
-        document.getElementById('timer-arc').innerText = timeLeft;
-        let cd = setInterval(() => {
-            timeLeft--;
-            if(timeLeft >= 1) soundTick.play();
-            document.getElementById('timer-arc').innerText = timeLeft;
-            if (timeLeft <= 0) { clearInterval(cd); launchPlane(); }
-        }, 1000);
-    }
-
-    function placeBet() {
-        let amt = parseFloat(document.getElementById('bet-amount').value);
-        if (amt > currentBalance || amt <= 0) return alert("الرصيد غير كافٍ!");
-        currentBet = amt; betPlaced = true;
-        document.getElementById('bet-btn').disabled = true;
-        document.getElementById('bet-btn').innerText = "تم الحجز..";
-    }
-
-    async function launchPlane() {
-        isGameRunning = true;
-        
-        // تشغيل الموسيقى الحماسية وصوت المحرك
-        soundEpicMusic.play();
-        soundTakeoff.play();
-        
-        document.getElementById('countdown-box').style.display = 'none';
-        document.getElementById('multiplier').style.display = 'flex';
-        document.getElementById('multiplier').style.color = "#00ff88";
-        
-        if (betPlaced) {
-            currentBalance -= currentBet; updateUI();
-            document.getElementById('bet-area').style.display = 'none';
-            document.getElementById('cashout-btn').style.display = 'block';
-        }
-
-        crashPoint = (Math.random() * (Math.random() > 0.85 ? 12 : 3) + 1.1).toFixed(2);
-        gameInterval = setInterval(() => {
-            currentMultiplier += (currentMultiplier < 3 ? 0.02 : 0.07);
-            document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
-            let lift = Math.min(currentMultiplier * 5, 75);
-            document.getElementById('plane-actor').style.transform = `translateY(-${lift}px) rotate(-${lift/4}deg)`;
-            if (currentMultiplier >= crashPoint) finishGame();
-        }, 100);
-    }
-
-    async function cashOut() {
-        if (!betPlaced || hasCashedOut) return;
-        hasCashedOut = true;
-        soundWin.play();
-        let winAmount = currentBet * currentMultiplier;
-        currentBalance += winAmount;
-        document.getElementById('cashout-btn').style.display = 'none';
-        document.getElementById('win-status').innerText = `تم السحب: +${winAmount.toFixed(0)} 💰`;
-        updateUI();
-        await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
-    }
-
-    async function finishGame() {
-        clearInterval(gameInterval);
-        
-        // إيقاف الموسيقى والمحرك فوراً عند التحطم
-        soundEpicMusic.pause();
-        soundTakeoff.pause();
-        
-        // تشغيل صوت الانفجار الجديد
-        soundCrashExplosion.play(); 
-
-        const finalMult = currentMultiplier.toFixed(2);
-        document.getElementById('multiplier').innerText = "CRASHED " + finalMult + "x";
-        document.getElementById('multiplier').style.color = "#f85149";
-        document.getElementById('cashout-btn').style.display = 'none';
-        
-        addToHistory(finalMult);
-        if (betPlaced && !hasCashedOut) {
-            await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
-        }
-        setTimeout(startNewRound, 2500);
-    }
-
-    function addToHistory(val) {
-        const list = document.getElementById('history-list');
-        const item = document.createElement('div');
-        item.className = `history-item ${val >= 2 ? 'hist-green' : 'hist-red'}`;
-        item.innerText = val + "x";
-        list.prepend(item);
-        if (list.children.length > 8) list.lastChild.remove();
-    }
-</script>
-</body>
-</html>
+            username =
