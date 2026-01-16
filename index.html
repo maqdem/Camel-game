@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن - نسخة المحترفين</title>
+    <title>سباق الهجن - النسخة النهائية</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; }
@@ -21,19 +21,18 @@
         
         button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
         .btn-bet { background: var(--accent); color: #000; }
-        .btn-cashout { background: var(--error); color: white; display: flex; flex-direction: column; line-height: 1.2; padding: 10px; }
-        .btn-cashout .sub-text { font-size: 14px; font-weight: normal; opacity: 0.9; }
+        .btn-cancel { background: #444; color: white; }
+        .btn-cashout { background: var(--error); color: white; display: flex; flex-direction: column; line-height: 1.2; }
+        .btn-cashout .sub-text { font-size: 14px; font-weight: normal; opacity: 0.9; margin-top: 4px; }
         .btn-waiting { background: #222; color: #555; cursor: not-allowed; }
 
-        /* حركة الرصيد */
-        .balance-container { color: var(--gold); font-weight: bold; font-size: 18px; transition: transform 0.3s; }
+        .balance-container { color: var(--gold); font-weight: bold; font-size: 18px; transition: all 0.3s ease; }
         .balance-up { transform: scale(1.3); color: var(--accent) !important; }
         
-        /* انيميشن الربح المتطاير */
-        .win-float { position: absolute; font-weight: bold; color: var(--accent); animation: floatUp 1s forwards; pointer-events: none; z-index: 100; }
+        .win-float { position: absolute; font-weight: bold; color: var(--accent); animation: floatUp 1s forwards; pointer-events: none; z-index: 100; text-shadow: 0 0 10px rgba(0,255,136,0.5); }
         @keyframes floatUp { 
-            0% { transform: translateY(0); opacity: 1; font-size: 20px; }
-            100% { transform: translateY(-100px); opacity: 0; font-size: 30px; }
+            0% { transform: translate(-50%, 0); opacity: 1; font-size: 20px; }
+            100% { transform: translate(-50%, -120px); opacity: 0; font-size: 35px; }
         }
     </style>
 </head>
@@ -75,14 +74,16 @@
     async function handleLogin() {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
-        const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
-        if (data) {
-            user = data;
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-            updateUI();
-            autoLoop();
-        } else { alert("بيانات خاطئة"); }
+        try {
+            const { data, error } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
+            if (data) {
+                user = data;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'block';
+                updateUI();
+                autoLoop();
+            } else { alert("بيانات الدخول غير صحيحة"); }
+        } catch (e) { alert("حدث خطأ في الاتصال"); }
     }
 
     function updateUI() {
@@ -136,22 +137,93 @@
         const btn = document.getElementById('action-btn');
         btn.className = className;
         if (subText) {
-            btn.innerHTML = `<span>${text}</span><span class="sub-text">${subText}</span>`;
+            btn.innerHTML = `<span>${text}</span><small class="sub-text">${subText}</small>`;
         } else {
             btn.innerHTML = text;
         }
     }
 
     async function startRace() {
-        gameActive = true; startTime = Date.now();
-        crashPoint = (Math.random() * 4 + 1.1);
+        gameActive = true; 
+        startTime = Date.now();
+        crashPoint = (Math.random() * 5 + 1.1);
         
         if (betPlaced) {
             userInBet = true; betPlaced = false;
-            user.balance -= parseFloat(document.getElementById('bet-amount').value);
+            const betAmt = parseFloat(document.getElementById('bet-amount').value);
+            user.balance -= betAmt;
             updateUI();
         }
 
         return new Promise(resolve => {
             function frame() {
-                if (!game
+                if (!gameActive) return resolve();
+                let elapsed = (Date.now() - startTime) / 1000;
+                currentMult = Math.pow(Math.E, 0.09 * elapsed);
+                
+                document.getElementById('mult-display').innerText = currentMult.toFixed(2) + "x";
+                document.getElementById('camel').style.left = Math.min((currentMult - 1) * 20, 85) + "%";
+
+                if (userInBet && !hasCashedOut) {
+                    const bet = parseFloat(document.getElementById('bet-amount').value);
+                    const currentWin = Math.floor(bet * currentMult);
+                    updateButton("سحب الأرباح", "btn-cashout", `اربح الآن: ${currentWin} 💰`);
+                } else if (!userInBet) {
+                    updateButton("شاهد السباق...", "btn-waiting");
+                }
+
+                if (currentMult >= crashPoint) {
+                    gameActive = false;
+                    onCrash();
+                    resolve();
+                } else { requestAnimationFrame(frame); }
+            }
+            requestAnimationFrame(frame);
+        });
+    }
+
+    function cashOut() {
+        hasCashedOut = true;
+        const bet = parseFloat(document.getElementById('bet-amount').value);
+        const winAmount = Math.floor(bet * currentMult);
+        
+        animateWin(winAmount);
+        
+        user.balance += winAmount;
+        updateButton("تم السحب بنجاح", "btn-waiting");
+        updateDB();
+    }
+
+    function animateWin(amount) {
+        const btn = document.getElementById('action-btn');
+        const rect = btn.getBoundingClientRect();
+        const float = document.createElement('div');
+        float.className = 'win-float';
+        float.innerText = `+${amount}`;
+        float.style.left = (rect.left + rect.width / 2) + 'px';
+        float.style.top = rect.top + 'px';
+        document.body.appendChild(float);
+        
+        const bWrap = document.getElementById('balance-wrap');
+        bWrap.classList.add('balance-up');
+        
+        setTimeout(() => {
+            updateUI();
+            bWrap.classList.remove('balance-up');
+            float.remove();
+        }, 1000);
+    }
+
+    async function onCrash() {
+        document.getElementById('mult-display').innerText = "💥 " + currentMult.toFixed(2) + "x";
+        document.getElementById('mult-display').style.color = "var(--error)";
+        updateButton("انتهى السباق", "btn-waiting");
+        if (userInBet) updateDB();
+    }
+
+    async function updateDB() {
+        await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
+    }
+</script>
+</body>
+</html>
