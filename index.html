@@ -3,82 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سباق الجمال المحترف</title>
+    <title>سباق الهجن الاحترافي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --green: #22c55e; --red: #ef4444; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; overflow-x: hidden; padding: 10px; }
-        .card { background: var(--card); border-radius: 15px; padding: 15px; max-width: 450px; margin: auto; border: 1px solid #334155; }
+        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; overflow-x: hidden; }
+        .card { background: var(--card); border-radius: 15px; padding: 15px; max-width: 450px; margin: auto; border: 1px solid #334155; position: relative; }
         
-        /* منطقة السباق */
         .race-track { 
-            height: 200px; background: linear-gradient(to bottom, #020617, #1e293b); 
+            height: 220px; background: linear-gradient(to bottom, #020617, #1e293b); 
             border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 15px;
-        }
-        
-        /* حركة الجمل الاحترافية */
-        .camel { 
-            font-size: 55px; position: absolute; left: 10%; bottom: 20px; z-index: 5;
-            transition: left 0.2s linear;
-        }
-        
-        /* أنيميشن الركض */
-        .running { animation: gallop 0.4s infinite alternate ease-in-out; }
-        @keyframes gallop {
-            0% { transform: translateY(0) rotate(-5deg); }
-            100% { transform: translateY(-15px) rotate(5deg); }
+            border-bottom: 4px solid #c2914d;
         }
 
-        /* تأثير الغبار */
-        .dust {
-            position: absolute; bottom: 20px; left: 10%; font-size: 20px; opacity: 0;
+        /* الجمل المتحرك - SVG للأرجل */
+        .camel-container {
+            position: absolute; left: 10%; bottom: 20px; width: 80px; height: 80px;
+            transform: scaleX(-1); /* جعل الجمل ينظر لليمين */
+            transition: left 0.2s linear;
         }
-        .running + .dust { animation: dust-cloud 0.4s infinite; opacity: 0.6; }
-        @keyframes dust-cloud {
-            0% { transform: scale(1) translateX(0); opacity: 0.6; }
-            100% { transform: scale(2) translateX(-30px); opacity: 0; }
+
+        /* أنيميشن الركض للأرجل والجسم */
+        .running .camel-body { animation: body-shake 0.3s infinite alternate; }
+        @keyframes body-shake {
+            from { transform: translateY(0) rotate(0deg); }
+            to { transform: translateY(-10px) rotate(5deg); }
         }
 
         #multiplier { 
-            position: absolute; top: 30%; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
             font-size: 50px; font-weight: 900; color: var(--green); z-index: 10; display: none;
+            text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
         }
 
-        /* الواجهة السفلية */
+        /* الغبار */
+        .dust {
+            position: absolute; bottom: 5px; right: -10px; font-size: 20px; opacity: 0;
+        }
+        .running .dust { animation: dust-move 0.3s infinite; }
+        @keyframes dust-move {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(1.5) translateX(20px); opacity: 0; }
+        }
+
         .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         input { background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 8px; text-align: center; width: 100%; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 18px; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 18px; transition: 0.2s; }
         .btn-go { background: var(--green); color: white; }
         .btn-stop { background: var(--red); color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .hist-table { width: 100%; margin-top: 20px; border-top: 1px solid #334155; font-size: 14px; }
-        .win { color: var(--green); } .loss { color: var(--red); }
+        .hist-table { width: 100%; margin-top: 20px; border-top: 1px solid #334155; font-size: 14px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="login-ui" class="card" style="margin-top: 50px;">
     <h2>تسجيل الدخول</h2>
-    <input type="text" id="u" placeholder="اسم المستخدم" style="margin-bottom:10px">
-    <input type="password" id="p" placeholder="كلمة السر">
+    <input type="text" id="u" placeholder="اسم المستخدم">
+    <input type="password" id="p" placeholder="كلمة السر" style="margin-top:10px">
     <button onclick="login()" class="btn-go">دخول</button>
 </div>
 
 <div id="game-ui" class="card" style="display:none;">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
         <span id="user-name"></span>
         <span style="color:#fbbf24">💰 <span id="user-balance"></span></span>
     </div>
 
     <div class="race-track">
         <div id="multiplier">1.00x</div>
-        <div id="camel" class="camel">🐪</div>
-        <div class="dust">💨</div>
+        <div id="camel-box" class="camel-container">
+            <div class="camel-body" style="font-size: 60px;">🐪</div>
+            <div class="dust">💨</div>
+        </div>
     </div>
 
     <div class="inputs">
-        <div><small>قيمة الرهان</small><input type="number" id="bet-amt" value="10"></div>
-        <div><small>توقع (Guess)</small><input type="number" id="guess-amt" value="2.0"></div>
+        <div><small>الرهان</small><input type="number" id="bet-amt" value="10"></div>
+        <div><small>التوقع</small><input type="number" id="guess-amt" value="2.0"></div>
     </div>
     
     <button id="main-btn" onclick="toggleRace()" class="btn-go">ابدأ السباق</button>
@@ -103,7 +106,7 @@
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
             updateUI();
-        } else alert("خطأ!");
+        } else alert("بيانات خاطئة!");
     }
 
     function updateUI() {
@@ -119,27 +122,31 @@
 
     function start() {
         let amt = parseFloat(document.getElementById('bet-amt').value);
-        if (amt > bal) return alert("الرصيد لا يكفي");
+        if (amt > bal || amt <= 0) return alert("الرصيد غير كافٍ");
         
         bal -= amt; updateUI();
-        mult = 1.0; crashPt = (Math.random() * 4 + 1.1).toFixed(2);
+        mult = 1.0; 
+        // تحديد نقطة الانفجار بشكل عشوائي
+        crashPt = (Math.random() * 5 + 1.05).toFixed(2);
         
-        const camel = document.getElementById('camel');
+        const camelBox = document.getElementById('camel-box');
         const btn = document.getElementById('main-btn');
         const mDisplay = document.getElementById('multiplier');
 
-        camel.classList.add('running');
+        camelBox.classList.add('running');
         mDisplay.style.display = 'block';
         mDisplay.style.color = 'var(--green)';
-        btn.innerText = "اسحب الربح";
+        btn.innerText = "سحب الأرباح";
         btn.className = "btn-stop";
 
         gameInt = setInterval(() => {
-            mult = parseFloat((mult + 0.04).toFixed(2));
+            mult = parseFloat((mult + 0.03).toFixed(2));
             mDisplay.innerText = mult + "x";
             
-            // حركة الجمل لليسار مع التقدم
-            camel.style.left = Math.min(10 + (mult * 15), 70) + "%";
+            // تحريك الجمل لليمين (لأننا عكسنا الاتجاه بـ scaleX)
+            // بما أن scaleX(-1) تم تطبيقه، left ستزيد للأمام
+            let progress = Math.min(10 + (mult * 12), 75);
+            camelBox.style.left = progress + "%";
 
             if (mult >= crashPt) stop(false);
         }, 80);
@@ -156,11 +163,11 @@
 
     function stop(win) {
         clearInterval(gameInt);
-        const camel = document.getElementById('camel');
+        const camelBox = document.getElementById('camel-box');
         const btn = document.getElementById('main-btn');
         const mDisplay = document.getElementById('multiplier');
 
-        camel.classList.remove('running');
+        camelBox.classList.remove('running');
         if (!win) {
             mDisplay.style.color = 'var(--red)';
             mDisplay.innerText = "تعثر! " + mult + "x";
@@ -173,13 +180,13 @@
             btn.innerText = "ابدأ السباق";
             btn.className = "btn-go";
             mDisplay.style.display = 'none';
-            camel.style.left = "10%";
-        }, 2000);
+            camelBox.style.left = "10%";
+        }, 2500);
     }
 
     function addHist(s, m, a) {
         const h = document.getElementById('hist-body');
-        h.innerHTML = `<tr><td>${s}</td><td class="${s==='فوز'?'win':'loss'}">${m}x</td><td>${a}</td></tr>` + h.innerHTML;
+        h.innerHTML = `<tr><td>${s}</td><td style="color:${s==='فوز'?'#22c55e':'#ef4444'}">${m}x</td><td>${a}</td></tr>` + h.innerHTML;
     }
 </script>
 </body>
