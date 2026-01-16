@@ -1,145 +1,154 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bet Ahoul - Camel Rider Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root { --main-bg: #0d1117; --card-bg: #161b22; --accent: #00ff88; --danger: #ff4d4d; --gold: #fbbf24; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--main-bg); color: white; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 24px; overflow: hidden; border: 1px solid #30363d; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bet Ahoul - Camel Rider Edition</title>
 
-        /* منطقة السباق */
-        .race-arena { height: 260px; background: linear-gradient(180deg, #020617 0%, #161b22 100%); position: relative; overflow: hidden; border-bottom: 5px solid #8c5a2b; }
-        #multiplier { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); font-size: 55px; font-weight: 900; color: var(--accent); z-index: 10; text-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        /* الجمل والراكب SVG */
-        .camel-container { position: absolute; left: 10%; bottom: 15px; width: 130px; transform: scaleX(-1); transition: left 0.1s linear; }
-        .running .leg-front { animation: gallop 0.25s infinite alternate; transform-origin: top; }
-        .running .leg-back { animation: gallop 0.25s infinite alternate-reverse; transform-origin: top; }
-        .running .rider-body { animation: bounce 0.4s infinite alternate; }
-        
-        @keyframes gallop { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+<style>
+:root {
+  --main-bg:#0d1117;
+  --card-bg:#161b22;
+  --accent:#00ff88;
+  --danger:#ff4d4d;
+  --gold:#fbbf24;
+}
 
-        /* الواجهة والتحكم */
-        .stats-bar { padding: 12px 18px; display: flex; justify-content: space-between; font-weight: bold; background: #0d1117; border-bottom: 1px solid #30363d; }
-        .controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        input { background: #0d1117; border: 1px solid #30363d; color: white; padding: 14px; border-radius: 12px; text-align: center; font-size: 18px; width: 100%; box-sizing: border-box; }
-        button { grid-column: span 2; padding: 18px; border-radius: 15px; border: none; font-weight: 900; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .run-btn { background: var(--accent); color: #000; }
-        .cash-btn { background: var(--danger); color: white; }
-    </style>
+body {
+  font-family:'Segoe UI',sans-serif;
+  background:var(--main-bg);
+  color:white;
+  margin:0;
+  padding:10px;
+  display:flex;
+  justify-content:center;
+}
+
+.app {
+  width:100%;
+  max-width:450px;
+  background:var(--card-bg);
+  border-radius:24px;
+  overflow:hidden;
+  border:1px solid #30363d;
+  box-shadow:0 15px 40px rgba(0,0,0,.6);
+}
+
+/* ===== السباق ===== */
+.race-arena {
+  height:260px;
+  background:linear-gradient(180deg,#020617 0%,#161b22 100%);
+  position:relative;
+  overflow:hidden;
+  border-bottom:5px solid #8c5a2b;
+}
+
+#multiplier {
+  position:absolute;
+  top:15%;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:55px;
+  font-weight:900;
+  color:var(--accent);
+  z-index:10;
+  text-shadow:0 0 20px rgba(0,255,136,.4);
+}
+
+/* ===== الجمل ===== */
+.camel-container {
+  position:absolute;
+  left:10%;
+  bottom:10px;
+  width:160px;
+  transform:scaleX(-1);
+  transition:left .1s linear;
+}
+
+.running svg {
+  animation:bounce .4s infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform:translateY(0); }
+  to   { transform:translateY(-6px); }
+}
+
+/* ===== الواجهة ===== */
+.stats-bar {
+  padding:12px 18px;
+  display:flex;
+  justify-content:space-between;
+  font-weight:bold;
+  background:#0d1117;
+  border-bottom:1px solid #30363d;
+}
+
+.controls {
+  padding:20px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+input {
+  background:#0d1117;
+  border:1px solid #30363d;
+  color:white;
+  padding:14px;
+  border-radius:12px;
+  text-align:center;
+  font-size:18px;
+}
+
+button {
+  grid-column:span 2;
+  padding:18px;
+  border-radius:15px;
+  border:none;
+  font-weight:900;
+  font-size:20px;
+  cursor:pointer;
+}
+
+.run-btn {
+  background:var(--accent);
+  color:#000;
+}
+
+.cash-btn {
+  background:var(--danger);
+  color:white;
+}
+</style>
 </head>
+
 <body>
 
-<div id="login-ui" style="text-align:center; padding-top:100px; width:320px;">
-    <h2 style="color:var(--accent); margin-bottom:25px;">Bet Ahoul</h2>
-    <input type="text" id="user-in" placeholder="اسم المستخدم" style="margin-bottom:12px;">
-    <input type="password" id="pass-in" placeholder="كلمة السر">
-    <button onclick="login()" class="run-btn" style="margin-top:15px;">دخول</button>
+<!-- ===== تسجيل الدخول ===== -->
+<div id="login-ui" style="text-align:center;padding-top:100px;width:320px;">
+  <h2 style="color:var(--accent);margin-bottom:25px;">Bet Ahoul</h2>
+  <input id="user-in" placeholder="اسم المستخدم" style="margin-bottom:12px;">
+  <input id="pass-in" type="password" placeholder="كلمة السر">
+  <button onclick="login()" class="run-btn" style="margin-top:15px;">دخول</button>
 </div>
 
+<!-- ===== اللعبة ===== -->
 <div id="game-ui" class="app" style="display:none;">
-    <div class="stats-bar">
-        <span style="color:var(--gold)">💰 <span id="u-bal">0</span></span>
-        <span id="u-name" style="opacity:0.8"></span>
-    </div>
+  <div class="stats-bar">
+    <span style="color:var(--gold)">💰 <span id="u-bal">0</span></span>
+    <span id="u-name" style="opacity:.8"></span>
+  </div>
 
-    <div class="race-arena">
-        <div id="multiplier">1.00x</div>
-        <div id="camel-actor" class="camel-container">
-            <svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg" class="rider-body">
-                <path class="leg-back" d="M45 80 L35 110" stroke="#d97706" stroke-width="8" stroke-linecap="round"/>
-                <path class="leg-front" d="M90 80 L100 110" stroke="#d97706" stroke-width="8" stroke-linecap="round"/>
-                <path d="M30 80 Q 65 25 100 80 L 120 80 Q 135 80 130 50" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
-                <rect x="55" y="40" width="30" height="20" fill="#2ecc71" rx="2"/> <circle cx="70" cy="25" r="10" fill="#ffffff"/> <circle cx="75" cy="15" r="6" fill="#e0ac69"/> <rect x="70" y="8" width="12" height="5" fill="#e74c3c" rx="2"/> <path d="M130 50 Q 135 20 145 30" stroke="#f59e0b" stroke-width="12" fill="none" stroke-linecap="round"/>
-                <circle cx="145" cy="30" r="8" fill="#f59e0b"/>
-                <circle cx="147" cy="28" r="1.5" fill="black"/>
-            </svg>
-        </div>
-    </div>
+  <div class="race-arena">
+    <div id="multiplier">1.00x</div>
 
-    <div class="controls">
-        <input type="number" id="bet-amt" value="100">
-        <input type="number" id="guess-amt" value="2.0">
-        <button id="main-btn" onclick="handleGame()" class="run-btn">Run</button>
-    </div>
-</div>
-
-<script>
-    const S_URL = 'https://uqmfwgdrlcqywxvdljlb.supabase.co';
-    const S_KEY = 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT';
-    const _supabase = supabase.createClient(S_URL, S_KEY);
-
-    let bal, user, gameTimer, currentX = 1.0, active = false;
-
-    async function login() {
-        const u = document.getElementById('user-in').value.trim();
-        const p = document.getElementById('pass-in').value.trim();
-        const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
-        if (data) {
-            user = data.username; bal = data.balance;
-            document.getElementById('login-ui').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-            updateUI();
-        } else alert("بيانات خاطئة!");
-    }
-
-    function updateUI() {
-        document.getElementById('u-bal').innerText = Math.floor(bal);
-        document.getElementById('u-name').innerText = "@" + user;
-    }
-
-    function handleGame() {
-        if (!active) start(); else cash();
-    }
-
-    function start() {
-        let b = parseFloat(document.getElementById('bet-amt').value);
-        if (b > bal || b <= 0) return alert("الرصيد لا يكفي");
-        bal -= b; updateUI();
-        
-        active = true; currentX = 1.0;
-        let crash = (Math.random() * 5.5 + 1.05).toFixed(2);
-        const btn = document.getElementById('main-btn');
-        const actor = document.getElementById('camel-actor');
-
-        btn.innerText = "Cash Out"; btn.className = "cash-btn";
-        actor.classList.add('running');
-
-        gameTimer = setInterval(() => {
-            currentX = parseFloat((currentX + 0.04).toFixed(2));
-            document.getElementById('multiplier').innerText = currentX + "x";
-            actor.style.left = Math.min(10 + (currentX * 12), 75) + "%";
-            if (currentX >= crash) stop(false);
-        }, 100);
-    }
-
-    async function cash() {
-        clearInterval(gameTimer);
-        let win = currentX * parseFloat(document.getElementById('bet-amt').value);
-        bal += win; updateUI();
-        await _supabase.from('Profiles').update({ balance: Math.floor(bal) }).eq('username', user);
-        stop(true);
-    }
-
-    function stop(win) {
-        clearInterval(gameTimer); active = false;
-        const actor = document.getElementById('camel-actor');
-        const btn = document.getElementById('main-btn');
-        const txt = document.getElementById('multiplier');
-
-        actor.classList.remove('running');
-        if (!win) { txt.style.color = "var(--danger)"; txt.innerText = "Crash! " + currentX + "x"; }
-        
-        btn.disabled = true;
-        setTimeout(() => {
-            btn.disabled = false; btn.innerText = "Run"; btn.className = "run-btn";
-            txt.style.color = "var(--accent)"; actor.style.left = "10%";
-        }, 2000);
-    }
-</script>
-</body>
-</html>
+    <!-- الجمل بالصورة الأصلية داخل SVG -->
+    <div id="camel-actor" class="camel-container">
+      <svg viewBox="0 0 400 287" xmlns="http://www.w3.org/2000/svg">
+        <image href="camel.png"
+               width="400"
+               height="287"
+               preserveAspectRatio="xMidYMid meet"/>
