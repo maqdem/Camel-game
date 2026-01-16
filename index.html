@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رادار الطيران - نسخة هامش الربح</title>
+    <title>رادار الطيران - النسخة الاحترافية المصلحة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; text-align: center; margin: 0; padding: 10px; }
@@ -16,8 +16,10 @@
         .controls { background: #12191f; padding: 15px; border-radius: 15px; }
         input { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #1c262d; color: white; text-align: center; font-size: 20px; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #bet-btn { background: #238636; color: white; display: block; }
-        #cashout-btn { background: #f85149; color: white; display: none; font-size: 20px; }
+        #main-btn { width: 100%; }
+        .btn-bet { background: #238636; color: white; }
+        .btn-cashout { background: #f85149; color: white; }
+        .btn-success { background: #2d333b; color: #3fb950; cursor: default; }
         .history { display: flex; justify-content: center; gap: 5px; margin-top: 15px; flex-wrap: wrap; }
         .hist-tag { padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; background: #2d333b; }
         .red { color: #f85149; } .green { color: #3fb950; }
@@ -29,7 +31,7 @@
     <h2>تسجيل الدخول</h2>
     <input type="text" id="u" placeholder="اسم المستخدم">
     <input type="password" id="p" placeholder="كلمة السر">
-    <button onclick="login()">دخول</button>
+    <button onclick="login()" class="btn-bet">دخول</button>
 </div>
 
 <div id="game-ui" style="display:none;" class="card">
@@ -49,11 +51,10 @@
     </div>
 
     <div class="controls">
-        <div id="bet-area">
+        <div id="bet-input-area">
             <input type="number" id="bet-amount" value="10">
-            <button id="bet-btn" onclick="placeBet()">تجهيز الرهان</button>
         </div>
-        <button id="cashout-btn" onclick="cashOut()"></button>
+        <button id="main-btn" onclick="handleButtonClick()" class="btn-bet">تجهيز الرهان</button>
     </div>
 
     <div id="history-list" class="history"></div>
@@ -69,13 +70,14 @@
     const s_crash = new Audio('https://www.soundjay.com/mechanical/sounds/explosion-02.mp3');
     const s_win = new Audio('https://www.soundjay.com/buttons/sounds/button-37.mp3');
 
-    function unlockAudio() {
-        s_music.play().then(() => { s_music.pause(); s_music.currentTime = 0; }).catch(() => {});
-        s_tick.play().then(() => { s_tick.pause(); s_tick.currentTime = 0; }).catch(() => {});
-    }
-
     let currentBalance, username, gameInterval, countdownInterval;
-    let currentMultiplier = 1.0, crashPoint = 0, isBetting = false, hasCashedOut = false, currentBet = 0;
+    let currentMultiplier = 1.0, crashPoint = 0, betPlaced = false, cashedOut = false, currentBet = 0;
+
+    function unlockAudio() {
+        [s_tick, s_music, s_crash, s_win].forEach(s => {
+            s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(() => {});
+        });
+    }
 
     async function login() {
         unlockAudio();
@@ -83,12 +85,10 @@
         const p = document.getElementById('p').value.trim();
         const { data } = await _supabase.from('Profiles').select('*').eq('username', u).eq('password', p).single();
         if (data) {
-            username = data.username;
-            currentBalance = data.balance;
+            username = data.username; currentBalance = data.balance;
             document.getElementById('login-ui').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            updateDisplay();
-            startNewRound();
+            updateDisplay(); startNewRound();
         } else { alert("خطأ في البيانات"); }
     }
 
@@ -98,44 +98,48 @@
     }
 
     function startNewRound() {
-        clearInterval(gameInterval);
-        clearInterval(countdownInterval);
-        isBetting = false;
-        hasCashedOut = false;
-        currentMultiplier = 1.0;
+        clearInterval(gameInterval); clearInterval(countdownInterval);
+        betPlaced = false; cashedOut = false; currentMultiplier = 1.0;
         
         document.getElementById('multiplier').style.display = 'none';
         document.getElementById('multiplier').style.color = "#00ff88";
         document.getElementById('countdown-box').style.display = 'block';
-        document.getElementById('bet-area').style.display = 'block';
-        document.getElementById('bet-btn').style.display = 'block';
-        document.getElementById('bet-btn').disabled = false;
-        document.getElementById('bet-btn').innerText = "تجهيز الرهان";
-        document.getElementById('cashout-btn').style.display = 'none';
+        document.getElementById('bet-input-area').style.display = 'block';
+        
+        const btn = document.getElementById('main-btn');
+        btn.className = 'btn-bet';
+        btn.innerText = "تجهيز الرهان";
+        btn.disabled = false;
+        
         document.getElementById('plane-img').style.transform = "translate(0,0)";
 
         let timeLeft = 5;
         document.getElementById('timer-num').innerText = timeLeft;
-
         countdownInterval = setInterval(() => {
             timeLeft--;
             if(timeLeft >= 1) s_tick.play().catch(()=>{});
             document.getElementById('timer-num').innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                launchPlane();
-            }
+            if (timeLeft <= 0) { clearInterval(countdownInterval); launchPlane(); }
         }, 1000);
+    }
+
+    function handleButtonClick() {
+        const btn = document.getElementById('main-btn');
+        if (btn.innerText === "تجهيز الرهان") {
+            placeBet();
+        } else if (btn.className.includes('btn-cashout')) {
+            cashOut();
+        }
     }
 
     function placeBet() {
         unlockAudio();
         let amt = parseFloat(document.getElementById('bet-amount').value);
         if (amt > currentBalance || amt <= 0) return alert("الرصيد غير كافٍ");
-        currentBet = amt;
-        isBetting = true;
-        document.getElementById('bet-btn').disabled = true;
-        document.getElementById('bet-btn').innerText = "انتظار الإقلاع..";
+        currentBet = amt; betPlaced = true;
+        const btn = document.getElementById('main-btn');
+        btn.innerText = "انتظار الإقلاع..";
+        btn.disabled = true;
     }
 
     function launchPlane() {
@@ -143,74 +147,68 @@
         document.getElementById('multiplier').style.display = 'flex';
         document.getElementById('multiplier').innerText = "1.00x";
         
-        s_music.currentTime = 0;
-        s_music.loop = true;
-        s_music.play().catch(() => {});
+        s_music.currentTime = 0; s_music.loop = true; s_music.play().catch(() => {});
 
-        if (isBetting) {
-            currentBalance -= currentBet;
-            updateDisplay();
-            document.getElementById('bet-btn').style.display = 'none';
-            document.getElementById('cashout-btn').style.display = 'block';
-            updateCashoutButton();
+        const btn = document.getElementById('main-btn');
+        if (betPlaced) {
+            currentBalance -= currentBet; updateDisplay();
+            document.getElementById('bet-input-area').style.display = 'none';
+            btn.className = 'btn-cashout';
+            btn.disabled = false;
+            updateCashoutText();
+        } else {
+            btn.innerText = "بدأت الرحلة.."; btn.disabled = true;
         }
 
         crashPoint = (Math.random() * (Math.random() > 0.8 ? 10 : 3) + 1.1).toFixed(2);
-
         gameInterval = setInterval(() => {
             currentMultiplier += (currentMultiplier < 4 ? 0.02 : 0.07);
             document.getElementById('multiplier').innerText = currentMultiplier.toFixed(2) + "x";
             
-            if (isBetting && !hasCashedOut) {
-                updateCashoutButton();
-            }
+            if (betPlaced && !cashedOut) updateCashoutText();
 
-            let moveY = Math.min(currentMultiplier * 6, 80);
-            let moveX = Math.min(currentMultiplier * 3, 50);
-            document.getElementById('plane-img').style.transform = `translate(${moveX}px, -${moveY}px)`;
+            let lift = Math.min(currentMultiplier * 6, 80);
+            let drift = Math.min(currentMultiplier * 3, 50);
+            document.getElementById('plane-img').style.transform = `translate(${drift}px, -${lift}px)`;
 
-            if (currentMultiplier >= crashPoint) {
-                triggerCrash();
-            }
+            if (currentMultiplier >= crashPoint) triggerCrash();
         }, 100);
     }
 
-    function updateCashoutButton() {
-        let potentialWin = (currentBet * currentMultiplier).toFixed(2);
-        document.getElementById('cashout-btn').innerHTML = `اسحب <span style="color:#ffcc00">${potentialWin}</span> 💰`;
+    function updateCashoutText() {
+        let win = (currentBet * currentMultiplier).toFixed(2);
+        document.getElementById('main-btn').innerHTML = `اسحب <span style="color:#ffcc00">${win}</span> 💰`;
     }
 
-    function cashOut() {
-        if (!isBetting || hasCashedOut) return;
-        hasCashedOut = true;
-        s_win.play().catch(()=>{});
-        let win = currentBet * currentMultiplier;
-        currentBalance += win;
-        updateDisplay();
-        document.getElementById('cashout-btn').style.display = 'none';
-        _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username).then();
+    async function cashOut() {
+        if (!betPlaced || cashedOut) return;
+        cashedOut = true; s_win.play().catch(()=>{});
+        let winAmount = currentBet * currentMultiplier;
+        currentBalance += winAmount; updateDisplay();
+        
+        const btn = document.getElementById('main-btn');
+        btn.className = 'btn-success';
+        btn.innerHTML = `تم السحب بنجاح ✅ <br><small>+${winAmount.toFixed(2)}</small>`;
+        btn.disabled = true;
+
+        await _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username);
     }
 
     function triggerCrash() {
-        clearInterval(gameInterval);
-        s_music.pause();
-        s_music.currentTime = 0; 
-        s_crash.play().catch(()=>{}); 
-
+        clearInterval(gameInterval); s_music.pause(); s_crash.play().catch(()=>{}); 
         const final = currentMultiplier.toFixed(2);
         document.getElementById('multiplier').innerText = "💥 " + final + "x";
         document.getElementById('multiplier').style.color = "#f85149";
-        document.getElementById('cashout-btn').style.display = 'none';
-        document.getElementById('bet-btn').style.display = 'block';
-        document.getElementById('bet-btn').disabled = true;
-        document.getElementById('bet-btn').innerText = "انفجرت!";
+        
+        const btn = document.getElementById('main-btn');
+        if (!cashedOut) {
+            btn.className = 'btn-bet'; btn.innerText = "انفجرت!"; btn.disabled = true;
+        }
         
         addHistory(final);
-
-        if (isBetting && !hasCashedOut) {
+        if (betPlaced && !cashedOut) {
             _supabase.from('Profiles').update({ balance: Math.floor(currentBalance) }).eq('username', username).then();
         }
-
         setTimeout(startNewRound, 3000);
     }
 
