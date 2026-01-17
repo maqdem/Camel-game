@@ -1,32 +1,173 @@
-<style>
-    .track { 
-        height: 120px; 
-        background: #12191f; 
-        border-radius: 20px; 
-        position: relative; 
-        overflow: hidden; 
-        border: 2px solid #2d333b; 
-        margin: 15px 0;
-        /* خلفية توحي بالحركة */
-        background-image: linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-        background-size: 50px 100%;
-    }
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سباق الهجن | Camel Race</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --gold: #ffcc00; --error: #ff4b4b; --text: #e1e1e1; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
 
-    .camel-gif { 
-        position: absolute; 
-        bottom: 10px; 
-        left: 0; 
-        width: 80px; /* يمكنك تكبير أو تصغير الجمل من هنا */
-        height: auto;
-        z-index: 10;
-        transition: left 0.1s linear;
-        /* تنظيف الخلفية إذا لزم الأمر */
-        mix-blend-mode: lighten; 
-    }
-</style>
+        .app-container { width: 100%; max-width: 400px; background: var(--card); padding: 20px; border-radius: 25px; border: 1px solid #2d333b; position: relative; }
 
-<div class="track" id="track-box">
-    <img id="camel" class="camel-gif" 
-         src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2cWlxbm12dzR2ZzRxdjR2ZzRxdjR2ZzRxdjR2ZzRxdjR2ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/jR7kYj3n8HkU4/giphy.gif" 
-         alt="Running Camel">
+        /* الشاشة العلوية */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 5px 15px; border-radius: 10px; font-weight: bold; }
+
+        /* منطقة العرض */
+        .display-screen { height: 120px; display: flex; justify-content: center; align-items: center; }
+        #main-counter { font-size: 70px; font-weight: 900; color: var(--gold); }
+        #multiplier { font-size: 60px; font-weight: 900; color: var(--accent); display: none; }
+
+        /* مضمار السباق */
+        .track { 
+            height: 100px; background: #12191f; border-radius: 15px; position: relative; 
+            overflow: hidden; border: 1px solid #2d333b; margin: 15px 0;
+            background-image: linear-gradient(90deg, #1c262d 2px, transparent 2px); background-size: 40px 100%;
+        }
+        #camel-gif { 
+            position: absolute; bottom: 5px; left: 5%; width: 80px; height: auto; 
+            transition: left 0.1s linear; z-index: 10; 
+        }
+
+        /* أدوات التحكم */
+        .controls { background: #0d1117; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bet-input { background: #1c262d; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; text-align: center; font-size: 18px; width: 100%; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-bet { background: var(--accent); color: #000; }
+        .btn-cashout { background: var(--error); color: #fff; }
+        .btn-waiting { background: #333; color: #777; cursor: not-allowed; }
+
+        /* سجل الأرباح */
+        .history { display: flex; gap: 8px; margin-top: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .hist-tag { background: #12191f; color: var(--accent); padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(0,255,136,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="status-bar">
+        <span style="opacity: 0.6;">لاعب: <span id="user-name">ضيف</span></span>
+        <div class="balance-box">💰 <span id="balance">100.00</span></div>
+    </div>
+
+    <div class="display-screen">
+        <div id="main-counter">5</div>
+        <div id="multiplier">1.00x</div>
+    </div>
+
+    <div class="track" id="track-bg">
+        <img id="camel-gif" src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3N2cWlxbm12dzR2ZzRxdjR2ZzRxdjR2ZzRxdjR2ZzRxdjR2ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/jR7kYj3n8HkU4/giphy.gif" alt="camel">
+    </div>
+
+    <div class="controls">
+        <input type="number" id="bet-amount" class="bet-input" value="10">
+        <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
+    </div>
+
+    <div class="history" id="history-bar">
+        <div class="hist-tag">1.53x</div>
+        <div class="hist-tag">2.10x</div>
+        <div class="hist-tag" style="color:var(--error)">1.05x</div>
+    </div>
 </div>
+
+<script>
+    // إعدادات المحرك
+    let currentBalance = 100.00;
+    let isRacing = false;
+    let hasCashedOut = false;
+    let currentBet = 0;
+    let bgPos = 0;
+
+    function startEngine() {
+        setInterval(() => {
+            const now = Date.now() / 1000;
+            const cycle = 15; // دورة السباق (ثواني)
+            const waitTime = 5;
+            const pos = now % cycle;
+
+            if (pos < waitTime) {
+                // مرحلة العد التنازلي
+                showWait(Math.ceil(waitTime - pos));
+            } else {
+                // مرحلة الجري
+                const elapsed = pos - waitTime;
+                const crashPoint = 5.50; // نقطة وهمية للاختبار
+                const currentMult = Math.pow(1.12, elapsed);
+
+                if (currentMult >= crashPoint) {
+                    showCrash(crashPoint);
+                } else {
+                    showRace(currentMult, elapsed);
+                }
+            }
+        }, 50);
+    }
+
+    function showWait(seconds) {
+        isRacing = false;
+        hasCashedOut = false;
+        document.getElementById('main-counter').style.display = 'block';
+        document.getElementById('multiplier').style.display = 'none';
+        document.getElementById('main-counter').innerText = seconds;
+        document.getElementById('camel-gif').style.left = "5%";
+        document.getElementById('camel-gif').style.opacity = "0.4";
+        updateButton("وضع رهان", "btn-bet");
+    }
+
+    function showRace(m, e) {
+        isRacing = true;
+        document.getElementById('main-counter').style.display = 'none';
+        const multDisplay = document.getElementById('multiplier');
+        multDisplay.style.display = 'block';
+        multDisplay.innerText = m.toFixed(2) + "x";
+        multDisplay.style.color = "var(--accent)";
+
+        const camel = document.getElementById('camel-gif');
+        camel.style.opacity = "1";
+        camel.style.left = Math.min(5 + (e * 7), 75) + "%";
+        
+        // تحريك الخلفية
+        bgPos -= (2 + m);
+        document.getElementById('track-bg').style.backgroundPosition = bgPos + "px 0px";
+
+        if (!hasCashedOut) {
+            const potentialWin = (document.getElementById('bet-amount').value * m).toFixed(2);
+            updateButton(`سحب الأرباح (💰 ${potentialWin})`, "btn-cashout");
+        }
+    }
+
+    function showCrash(cp) {
+        const multDisplay = document.getElementById('multiplier');
+        multDisplay.innerText = cp.toFixed(2) + "x";
+        multDisplay.style.color = "var(--error)";
+        document.getElementById('camel-gif').style.opacity = "0";
+        updateButton("انتهى السباق", "btn-waiting");
+    }
+
+    function updateButton(text, className) {
+        const btn = document.getElementById('action-btn');
+        btn.innerText = text;
+        btn.className = "main-btn " + className;
+    }
+
+    function handleAction() {
+        if (!isRacing) {
+            currentBet = parseFloat(document.getElementById('bet-amount').value);
+            currentBalance -= currentBet;
+            document.getElementById('balance').innerText = currentBalance.toFixed(2);
+            alert("تم وضع الرهان بنجاح!");
+        } else if (!hasCashedOut) {
+            hasCashedOut = true;
+            alert("تم سحب الأرباح!");
+            updateButton("تم السحب", "btn-waiting");
+        }
+    }
+
+    startEngine();
+</script>
+</body>
+</html>
