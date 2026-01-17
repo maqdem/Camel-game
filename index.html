@@ -163,7 +163,17 @@
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         updateUI(); 
+        
+        // جلب السجل الأولي
         syncHistory(); 
+        
+        // تفعيل تحديث السجل الفوري (Realtime)
+        supabaseClient.channel('history-monitor')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'GameHistory' }, () => {
+                setTimeout(syncHistory, 500); // تأخير بسيط لضمان اكتمال الكتابة في السيرفر
+            })
+            .subscribe();
+
         initPresence();
         requestAnimationFrame(tick);
     }
@@ -202,7 +212,6 @@
 
         if (pos < WAIT) {
             renderWait(Math.ceil(WAIT - pos));
-            if (window.needsSync) { syncHistory(); window.needsSync = false; }
             window.isLogged = false;
         } else {
             const elapsed = pos - WAIT;
@@ -213,7 +222,6 @@
                 if (!window.isLogged) {
                     window.isLogged = true;
                     saveRound(crashAt);
-                    window.needsSync = true;
                 }
             } else {
                 renderRace(mult, elapsed);
@@ -313,11 +321,21 @@
     async function saveRound(p) { await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) }); }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
-        if (data) {
-            const list = document.getElementById('history-list');
-            list.innerHTML = data.map(r => `<div class="history-item ${r.crash_point < 2 ? 'hist-crash' : ''}">${r.crash_point.toFixed(2)}x</div>`).join('');
-        }
+        try {
+            const { data } = await supabaseClient
+                .from('GameHistory')
+                .select('crash_point')
+                .order('created_at', { ascending: false })
+                .limit(10);
+                
+            if (data) {
+                const list = document.getElementById('history-list');
+                list.innerHTML = data.map(r => {
+                    const val = parseFloat(r.crash_point).toFixed(2);
+                    return `<div class="history-item ${val < 2 ? 'hist-crash' : ''}">${val}x</div>`;
+                }).join('');
+            }
+        } catch (e) { console.error("History sync error"); }
     }
 
     async function saveBalance() { if(user) await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
