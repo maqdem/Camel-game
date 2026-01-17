@@ -53,7 +53,7 @@
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
 
-        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; min-height: 45px; }
         .history-item { min-width: 65px; padding: 8px; border-radius: 10px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.2); font-size: 13px; font-weight: bold; text-align: center; }
         .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.2); }
     </style>
@@ -161,16 +161,18 @@
             if (pos < WAIT) {
                 renderWait(Math.ceil(WAIT - pos));
                 roundActive = true; 
-                window.isLogged = false; // تصفير حالة التسجيل لجولة جديدة
+                window.isLogged = false; 
+                // مزامنة السجل الحقيقي في بداية كل جولة جديدة
+                if (window.needsSync) { syncHistory(); window.needsSync = false; }
             } else {
                 const elapsed = pos - WAIT, mult = Math.pow(1.15, elapsed);
                 
-                // تم إصلاح منطق الانفجار: فحص التسجيل أولاً لضمان عدم الضياع
                 if (mult >= crashAt) {
                     if (roundActive) renderCrash(crashAt);
                     if (!window.isLogged) { 
-                        window.isLogged = true; // نضمن التسجيل مرة واحدة فوراً
-                        saveRound(crashAt.toFixed(2)); 
+                        window.isLogged = true; 
+                        saveRound(crashAt.toFixed(2));
+                        window.needsSync = true; // نطلب المزامنة للجولة القادمة
                     }
                 } else if (roundActive) {
                     renderRace(mult, elapsed);
@@ -203,7 +205,6 @@
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
         
-        // تم إصلاح حركة الجمل: أبطأ (ضرب 3 بدلاً من 6) وحد أقصى 65% لعدم التصادم
         const camelPos = Math.min(e * 3, 65);
         document.getElementById('camel-wrap').style.left = camelPos + "%";
         
@@ -270,16 +271,27 @@
         b.innerHTML = s ? `<span>${t}</span><br><small>💰 ${s}</small>` : t;
     }
 
-    async function saveRound(p) { pushUIHist(p); await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) }); }
+    // تم تعديل حفظ الجولة ليكون من خلال قاعدة البيانات فقط
+    async function saveRound(p) { 
+        await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) }); 
+    }
+
+    // تم تعديل المزامنة لتفريغ السجل القديم وجلب الجديد دائماً
     async function syncHistory() {
         const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
-        if (data) data.forEach(r => pushUIHist(r.crash_point.toFixed(2)));
+        if (data) {
+            const list = document.getElementById('history-list');
+            list.innerHTML = ''; // مسح القائمة لضمان عدم التكرار أو الاختلاف
+            data.forEach(r => {
+                const val = r.crash_point.toFixed(2);
+                const i = document.createElement('div');
+                i.className = `history-item ${val < 2 ? 'hist-crash' : ''}`;
+                i.innerText = val + 'x';
+                list.appendChild(i);
+            });
+        }
     }
-    function pushUIHist(v) {
-        const l = document.getElementById('history-list'); const i = document.createElement('div');
-        i.className = `history-item ${v < 2 ? 'hist-crash' : ''}`; i.innerText = v + 'x';
-        l.insertBefore(i, l.firstChild); if (l.children.length > 10) l.removeChild(l.lastChild);
-    }
+
     async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
 
     window.authMode = 'login';
