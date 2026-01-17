@@ -30,6 +30,11 @@
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
+        
+        /* ستايل سجل النتائج الجديد */
+        .history-list { display: flex; gap: 8px; overflow-x: auto; margin-top: 15px; padding: 5px; flex-direction: row-reverse; scrollbar-width: none; }
+        .history-item { min-width: 65px; background: #12191f; padding: 8px; border-radius: 10px; text-align: center; color: var(--accent); border: 1px solid rgba(0,255,136,0.1); font-weight: bold; font-size: 13px; }
+        .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.1); }
     </style>
 </head>
 <body>
@@ -69,6 +74,7 @@
             </div>
             <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
         </div>
+        <div id="history-list" class="history-list"></div>
     </div>
 </div>
 
@@ -78,6 +84,7 @@
 
     let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
     let autoEnabled = true, gameState = "WAITING", currentMult = 1.00, crashAt = 0;
+    let localHistory = [];
 
     function toggleAuto() {
         autoEnabled = !autoEnabled;
@@ -95,19 +102,18 @@
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         updateUI();
+        syncHistory(); // جلب السجل عند البداية
         runGameLoop();
     }
 
-    // المعادلة الجديدة: تعطي رقم عشوائي حقيقي بين 1.00 و 700.00
     function generateNewCrash() {
         let r = Math.random();
-        if (r < 0.05) return 1.00; // 5% احتمال خسارة فورية
-        let result = 0.96 / (1 - r); 
+        if (r < 0.05) return 1.00; 
+        let result = 0.97 / (1 - r); 
         return Math.min(parseFloat(result.toFixed(2)), 700.00); 
     }
 
     function runGameLoop() {
-        // 1. مرحلة الانتظار
         gameState = "WAITING";
         crashAt = generateNewCrash();
         let timer = 5;
@@ -128,17 +134,16 @@
         
         const raceInterval = setInterval(() => {
             let elapsed = (Date.now() - startTime) / 1000;
-            // سرعة العداد - تزداد تدريجياً
-            currentMult = Math.pow(1.09, elapsed); 
+            currentMult = Math.pow(1.08, elapsed); 
 
             if (currentMult >= crashAt) {
                 clearInterval(raceInterval);
                 renderCrash(crashAt);
-                setTimeout(runGameLoop, 3000); // العودة للانتظار بعد 3 ثوانٍ
+                setTimeout(runGameLoop, 3000);
             } else {
                 renderRace(currentMult, elapsed);
-                if (userInRace && !cashed) {
-                    if (autoEnabled && currentMult >= parseFloat(document.getElementById('auto-cashout').value)) {
+                if (userInRace && !cashed && autoEnabled) {
+                    if (currentMult >= parseFloat(document.getElementById('auto-cashout').value)) {
                         doCashout(currentMult);
                     }
                 }
@@ -184,8 +189,10 @@
         document.getElementById('camel-wrap').style.opacity = "0";
         document.getElementById('action-btn').innerText = "انفجر!";
         document.getElementById('action-btn').className = "main-btn btn-waiting";
-        userInRace = false; betPlaced = false; cashed = false;
+        
+        addLocalHistory(cp); // إضافة للسجل فوراً
         saveRound(cp);
+        userInRace = false; betPlaced = false; cashed = false;
     }
 
     function handleAction() {
@@ -211,6 +218,30 @@
     }
 
     function updateUI() { document.getElementById('balance').innerText = user.balance.toFixed(2); document.getElementById('player-display').innerText = user.username; }
+
+    // --- نظام السجل المتطور ---
+    function addLocalHistory(v) {
+        const val = parseFloat(v).toFixed(2);
+        localHistory.unshift(val);
+        if (localHistory.length > 10) localHistory.pop();
+        renderHistoryUI();
+    }
+
+    async function syncHistory() {
+        try {
+            const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+            if (data) {
+                localHistory = data.map(r => r.crash_point.toFixed(2));
+                renderHistoryUI();
+            }
+        } catch(e) {}
+    }
+
+    function renderHistoryUI() {
+        const list = document.getElementById('history-list');
+        list.innerHTML = localHistory.map(v => `<div class="history-item ${parseFloat(v) < 2 ? 'hist-crash' : ''}">${v}x</div>`).join('');
+    }
+
     async function saveRound(p) { await supabaseClient.rpc('add_crash_record', { crash_val: p }); }
     async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
 </script>
