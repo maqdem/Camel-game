@@ -254,4 +254,18 @@
             .order('created_at', { ascending: false })
             .limit(10); 
         if (data) { 
-            localHistory = data.map(r => parseFloat(r.
+            localHistory = data.map(r => parseFloat(r.crash_point).toFixed(2)); 
+            renderHistoryUI(); 
+        } 
+    }
+
+    function renderHistoryUI() { 
+        document.getElementById('history-list').innerHTML = localHistory.map(v => 
+            `<div class="history-item ${v < 2 ? 'hist-crash' : ''}">${v}x</div>`).join(''); 
+    }
+
+    async function saveRound(p) { await supabaseClient.rpc('add_crash_record', { crash_val: p }); }
+    async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
+</script>
+</body>
+</html>
