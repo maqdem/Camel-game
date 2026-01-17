@@ -3,57 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن - النسخة الاحترافية</title>
+    <title>سباق الهجن - النسخة الاحترافية المؤمنة</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 24px; text-align: center; position: relative; }
+        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid #2d333b; text-align: center; position: relative; }
         
-        #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); margin: 20px 0; }
-        .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); margin: 15px 0; display: none; }
+        #main-timer { font-size: 85px; font-weight: 900; color: var(--gold); margin: 15px 0; }
+        .multiplier { font-size: 65px; font-weight: 900; color: var(--accent); margin: 15px 0; display: none; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
         
         .track { 
-            height: 140px; background: #12191f; border-radius: 18px; position: relative; border: 2px solid #2d333b; margin: 15px 0; overflow: hidden; 
+            height: 130px; background: #12191f; border-radius: 18px; position: relative; border: 2px solid #2d333b; margin: 15px 0; overflow: hidden; 
             background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.05) 50%);
             background-size: 40px 100%;
         }
-        .camel { position: absolute; bottom: 20px; left: 0; font-size: 55px; z-index: 2; transition: left 0.1s linear; }
+        .camel { position: absolute; bottom: 15px; left: 0; font-size: 50px; z-index: 2; transition: left 0.1s linear; }
 
-        .controls { background: #0d1117; padding: 15px; border-radius: 18px; margin-bottom: 20px; }
-        .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #1c262d; color: white; text-align: center; margin: 8px 0; font-size: 18px; }
-        
-        button { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .controls { background: #0d1117; padding: 15px; border-radius: 18px; margin-bottom: 15px; }
+        .toggle-box { display: flex; justify-content: space-between; align-items: center; background: #1c262d; padding: 8px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
+        .switch { position: relative; width: 44px; height: 22px; }
+        .switch input { opacity: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #444; border-radius: 22px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .input-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1c262d; color: white; text-align: center; margin: 5px 0; font-size: 18px; }
+        button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; }
 
-        /* سجل الجولات المطور */
-        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; justify-content: flex-start; flex-direction: row-reverse; }
-        .history-item { min-width: 65px; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 13px; background: #12191f; border: 1px solid rgba(0,255,136,0.2); color: var(--accent); }
-        .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.2); }
+        .win-badge { position: absolute; background: var(--accent); color: #000; padding: 6px 12px; border-radius: 10px; font-weight: 900; z-index: 20; animation: floatUp 1.5s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(0); scale: 0.5; } 20% { opacity: 1; scale: 1.1; } 100% { opacity: 0; transform: translateY(-80px); scale: 1; } }
 
-        .win-badge { position: absolute; background: var(--accent); color: #000; padding: 6px 12px; border-radius: 10px; font-weight: 900; z-index: 10; animation: floatUp 1.5s forwards; }
-        @keyframes floatUp { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-60px); } }
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
+        .history-item { min-width: 60px; padding: 6px; border-radius: 8px; font-weight: bold; font-size: 12px; background: #12191f; border: 1px solid rgba(0,255,136,0.2); color: var(--accent); text-align: center; }
+        .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.2); }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div id="game-screen">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <span id="player-name" style="color:#888">Admin</span>
-            <div style="color: var(--gold); font-weight: bold; font-size: 20px;">💰 <span id="player-balance">1000.00</span></div>
+    <div id="auth-screen">
+        <h2>دخول السباق 🐪</h2>
+        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
+        <input type="password" id="password" class="input-field" placeholder="كلمة السر">
+        <button class="btn-bet" onclick="handleLogin()">دخول</button>
+    </div>
+
+    <div id="game-screen" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span id="player-name" style="color: #888;">---</span>
+            <div style="color: var(--gold); font-weight: bold; font-size: 18px;">💰 <span id="player-balance">0.00</span></div>
         </div>
 
         <div id="main-timer">4</div>
         <div id="mult-display" class="multiplier">1.00x</div>
         
-        <div class="track" id="track-box"><div id="camel" class="camel">🐪</div></div>
+        <div class="track" id="track-box">
+            <div id="camel" class="camel">🐪</div>
+        </div>
 
         <div class="controls">
+            <div class="toggle-box">
+                <span>رهان تلقائي</span>
+                <label class="switch"><input type="checkbox" id="auto-bet-toggle"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-box">
+                <span>سحب آلي عند:</span>
+                <input type="number" id="auto-cash-val" value="2.00" step="0.1" style="width: 50px; background: #0b141a; color: white; border: none; text-align: center;">
+                <label class="switch"><input type="checkbox" id="auto-cash-toggle"><span class="slider"></span></label>
+            </div>
             <input type="number" id="bet-amount" class="input-field" value="10">
-            <button id="action-btn" class="btn-bet" onclick="handleAction()">رهان للسباق القادم</button>
+            <button id="action-btn" class="btn-bet" onclick="handleAction()">وضع رهان</button>
         </div>
 
         <div id="history-list" class="history-list"></div>
@@ -61,142 +85,140 @@
 </div>
 
 <script>
-    // إعدادات افتراضية (استبدلها ببيانات Supabase الخاصة بك)
-    let balance = 1000, betPlaced = false, userInBet = false, hasCashedOut = false, lastBet = 0;
-    let bgPos = 0, currentRoundId = -1;
+    const CONF = { URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' };
+    const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
-    const CYCLE = 20; // طول الدورة الافتراضي
-    const WAIT = 5;   // وقت الانتظار
+    let user = null, betPlaced = false, userInBet = false, hasCashedOut = false, lastBetValue = 0;
+    let bgPos = 0, currentRoundId = -1;
+    const CYCLE = 20; // طول الدورة كاملة (ثواني)
+    const WAIT = 4;   // وقت الانتظار
+
+    async function handleLogin() {
+        const u = document.getElementById('username').value, p = document.getElementById('password').value;
+        const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
+        if (data) { 
+            user = data; document.getElementById('auth-screen').style.display='none'; document.getElementById('game-screen').style.display='block';
+            updateUI(); syncHistory(); startEngine();
+        } else { alert("بيانات خاطئة"); }
+    }
+
+    async function syncHistory() {
+        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+        if (data) {
+            const l = document.getElementById('history-list'); l.innerHTML = '';
+            data.forEach(row => addToHistoryUI(row.crash_point.toFixed(2)));
+        }
+    }
 
     function generateCrash(seed) {
         let h = Math.abs(Math.sin(seed) * 10000);
         let r = h - Math.floor(h);
-        return Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 700);
+        return Math.min(parseFloat((0.98 / (1 - r * 0.985)).toFixed(2)), 500);
     }
 
     function startEngine() {
         setInterval(() => {
             const now = Date.now() / 1000;
-            const cyclePos = now % CYCLE;
+            const pos = now % CYCLE;
             const roundId = Math.floor(now / CYCLE);
             const crashPoint = generateCrash(roundId);
 
-            if (cyclePos < WAIT) {
-                // مرحلة الانتظار
-                if (currentRoundId !== roundId) {
-                    currentRoundId = roundId;
-                    resetRound();
-                }
-                renderWaiting(Math.ceil(WAIT - cyclePos));
+            if (pos < WAIT) {
+                if (currentRoundId !== roundId) { currentRoundId = roundId; resetRound(); }
+                renderWaiting(Math.ceil(WAIT - pos));
             } else {
-                // مرحلة السباق
-                const elapsed = cyclePos - WAIT;
+                const elapsed = pos - WAIT;
                 const currentMult = Math.pow(1.15, elapsed);
 
                 if (currentMult >= crashPoint) {
-                    if (!window.logged) {
-                        addToHistory(crashPoint.toFixed(2));
-                        window.logged = true;
-                    }
                     renderCrash(crashPoint);
+                    if (!window.isLogged) { 
+                        saveCrash(crashPoint.toFixed(2)); 
+                        window.isLogged = true; 
+                        betPlaced = false; 
+                    }
                 } else {
-                    window.logged = false;
+                    window.isLogged = false;
                     renderRacing(currentMult, elapsed);
-                    
                     if (betPlaced && !userInBet) {
                         userInBet = true; betPlaced = false;
-                        lastBet = parseFloat(document.getElementById('bet-amount').value);
-                        balance -= lastBet; updateUI();
+                        lastBetValue = parseFloat(document.getElementById('bet-amount').value);
+                        user.balance -= lastBetValue; updateUI();
+                    }
+                    if (userInBet && !hasCashedOut) {
+                        if (document.getElementById('auto-cash-toggle').checked && currentMult >= parseFloat(document.getElementById('auto-cash-val').value)) cashOut(currentMult);
+                        updateButton("سحب الآن", "btn-cashout", (currentMult * lastBetValue).toFixed(2));
                     }
                 }
             }
         }, 50);
     }
 
-    function resetRound() {
-        betPlaced = false; userInBet = false; hasCashedOut = false;
-        document.getElementById('mult-display').style.color = "var(--accent)";
-        document.getElementById('camel').style.left = "0%";
-    }
+    function resetRound() { userInBet = false; hasCashedOut = false; document.getElementById('mult-display').style.color = "var(--accent)"; }
 
     function renderWaiting(sec) {
         document.getElementById('main-timer').style.display = 'block';
         document.getElementById('mult-display').style.display = 'none';
         document.getElementById('main-timer').innerText = sec;
         document.getElementById('camel').style.left = "0%";
-        updateButton(betPlaced ? "إلغاء الرهان" : "رهان للسباق القادم", betPlaced ? "btn-waiting" : "btn-bet");
+        if (document.getElementById('auto-bet-toggle').checked && !betPlaced && user.balance >= parseFloat(document.getElementById('bet-amount').value)) betPlaced = true;
+        updateButton(betPlaced ? "إلغاء الرهان" : "رهان للجولة القادمة", betPlaced ? "btn-waiting" : "btn-bet");
     }
 
     function renderRacing(mult, elapsed) {
         document.getElementById('main-timer').style.display = 'none';
-        const display = document.getElementById('mult-display');
-        display.style.display = 'block';
-        display.innerText = mult.toFixed(2) + "x";
-        
+        const d = document.getElementById('mult-display'); d.style.display = 'block'; d.innerText = mult.toFixed(2) + "x";
         document.getElementById('camel').style.left = Math.min(elapsed * 4, 45) + "%";
-        bgPos -= (4 + (mult / 2));
-        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
-
-        if (userInBet && !hasCashedOut) {
-            updateButton("سحب الأرباح", "btn-cashout", (mult * lastBet).toFixed(2));
-        }
+        bgPos -= (3 + mult); document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
     }
 
     function renderCrash(cp) {
-        const display = document.getElementById('mult-display');
-        display.innerText = cp.toFixed(2) + "x";
-        display.style.color = "var(--error)";
+        const d = document.getElementById('mult-display'); d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
         updateButton("انفجر الجمل!", "btn-waiting");
     }
 
     function handleAction() {
-        if (document.getElementById('main-timer').style.display === 'block') {
-            betPlaced = !betPlaced;
+        const pos = (Date.now() / 1000) % CYCLE;
+        if (pos < WAIT) {
+            const amt = parseFloat(document.getElementById('bet-amount').value);
+            if (!betPlaced && user.balance >= amt) betPlaced = true;
+            else betPlaced = false;
         } else if (userInBet && !hasCashedOut) {
-            const mult = parseFloat(document.getElementById('mult-display').innerText);
+            const mult = Math.pow(1.15, (Date.now()/1000 % CYCLE) - WAIT);
             cashOut(mult);
         }
     }
 
     function cashOut(mult) {
+        if (hasCashedOut) return;
         hasCashedOut = true;
-        const win = lastBet * mult;
-        balance += win;
+        const win = lastBetValue * mult;
+        user.balance += win;
         showWinBadge(win.toFixed(2));
-        updateUI();
+        updateUI(); updateDB();
         updateButton("تم السحب", "btn-waiting");
     }
 
+    async function saveCrash(p) {
+        addToHistoryUI(p);
+        await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) });
+    }
+
+    function addToHistoryUI(v) {
+        const l = document.getElementById('history-list'); const i = document.createElement('div');
+        i.className = `history-item ${v < 2 ? 'hist-crash' : ''}`; i.innerText = v + 'x';
+        l.insertBefore(i, l.firstChild); if (l.children.length > 12) l.removeChild(l.lastChild);
+    }
+
     function showWinBadge(amt) {
-        const b = document.createElement('div');
-        b.className = 'win-badge';
-        b.innerText = `+${amt}`;
-        b.style.left = document.getElementById('camel').style.left;
-        b.style.bottom = "70px";
-        document.getElementById('track-box').appendChild(b);
-        setTimeout(() => b.remove(), 1500);
+        const b = document.createElement('div'); b.className = 'win-badge'; b.innerText = `+${amt} 💰`;
+        b.style.left = document.getElementById('camel').style.left; b.style.bottom = "60px";
+        document.getElementById('track-box').appendChild(b); setTimeout(() => b.remove(), 1500);
     }
 
-    function addToHistory(v) {
-        const l = document.getElementById('history-list');
-        const i = document.createElement('div');
-        i.className = `history-item ${v < 2 ? 'hist-crash' : ''}`;
-        i.innerText = v + 'x';
-        l.insertBefore(i, l.firstChild);
-        if (l.children.length > 10) l.removeChild(l.lastChild);
-    }
-
-    function updateUI() {
-        document.getElementById('player-balance').innerText = balance.toFixed(2);
-    }
-
-    function updateButton(t, c, s="") {
-        const b = document.getElementById('action-btn');
-        b.className = c;
-        b.innerHTML = s ? `<span>${t}</span><br><small>اربح الآن: ${s}</small>` : t;
-    }
-
-    startEngine();
+    function updateUI() { document.getElementById('player-balance').innerText = user.balance.toFixed(2); document.getElementById('player-name').innerText = user.username; }
+    function updateButton(t, c, s="") { const b = document.getElementById('action-btn'); b.className = c; b.innerHTML = s ? `<span>${t}</span><br><small>اربح: ${s}</small>` : t; }
+    async function updateDB() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
 </script>
 </body>
 </html>
