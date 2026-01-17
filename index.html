@@ -1,267 +1,279 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Camel Dash Pro – Ultimate</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سباق الهجن العالمي | Camel Dash Pro</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        
+        .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+        
+        /* انميشن الاهتزاز عند التحطم */
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+        .auth-container h2 { color: var(--accent); margin-bottom: 20px; text-align: center; }
+        .input-field { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #333; background: #12191f; color: white; margin-bottom: 15px; font-size: 16px; text-align: center; outline: none; }
+        .input-field:focus { border-color: var(--accent); }
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; background: #2d333b; border-radius: 8px; cursor: pointer; border: none; color: white; font-weight: bold; }
+        .tab-btn.active { background: var(--accent); color: #000; }
 
-<style>
-:root{
---bg:#0b141a;--card:#1c262d;--accent:#00ff88;
---danger:#ff4b4b;--gold:#ffcc00;--text:#e1e1e1
-}
-*{box-sizing:border-box;font-family:system-ui}
-body{
-margin:0;background:var(--bg);color:var(--text);
-display:flex;justify-content:center;align-items:center;
-min-height:100vh
-}
-.app{width:100%;max-width:420px;
-background:var(--card);padding:20px;
-border-radius:24px;border:1px solid #333}
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; transition: 0.3s; }
+        .win-glow { box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
 
-h2{text-align:center;color:var(--accent)}
+        #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; text-shadow: 0 0 20px rgba(255,204,0,0.3); }
+        .multiplier { font-size: 80px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
+        
+        .track { 
+            height: 140px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0;
+            background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%);
+            background-size: 60px 100%;
+        }
+        
+        /* الجمل وتأثير الغبار */
+        .camel-wrapper { position: absolute; bottom: 15px; left: 0; transition: left 0.1s linear; z-index: 5; display: flex; align-items: center; }
+        .camel { font-size: 55px; transform: scaleX(-1); }
+        .dust { position: absolute; bottom: 5px; left: -10px; width: 20px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(5px); display: none; }
 
-input,button{
-width:100%;padding:14px;border-radius:14px;
-border:none;margin-bottom:10px;font-size:16px
-}
-input{background:#12191f;color:#fff;border:1px solid #333}
+        /* تأثير الانفجار */
+        .explosion { position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
+        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
 
-button{font-weight:900;cursor:pointer}
-.btn-main{background:var(--accent);color:#000}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-wait{background:#222;color:#555}
+        .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 12px; }
+        .input-row { display: flex; gap: 10px; }
+        .input-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-size: 12px; color: #888; }
+        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; }
 
-.header{
-display:flex;justify-content:space-between;
-align-items:center;margin-bottom:10px
-}
-.balance{
-background:rgba(255,204,0,.15);
-border:1px solid var(--gold);
-padding:6px 14px;border-radius:14px;
-color:var(--gold);font-weight:900
-}
+        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .btn-bet { background: var(--accent); color: #000; }
+        .btn-cashout { background: var(--error); color: white; }
+        .btn-waiting { background: #222; color: #555; pointer-events: none; }
 
-#timer,#mult{
-text-align:center;font-size:64px;
-font-weight:900;margin:10px 0
-}
-#mult{display:none}
-
-.track{
-height:140px;background:#12191f;
-border-radius:20px;overflow:hidden;
-position:relative;border:2px solid #333
-}
-.camel{
-position:absolute;bottom:10px;left:0;
-font-size:60px;
-animation:run .4s infinite alternate
-}
-@keyframes run{
-from{transform:translateY(0)}
-to{transform:translateY(-4px)}
-}
-
-.popup{
-position:absolute;font-size:24px;
-font-weight:900;color:var(--accent);
-animation:fly 1.4s forwards
-}
-@keyframes fly{
-0%{opacity:0;transform:translateY(0)}
-20%{opacity:1}
-100%{opacity:0;transform:translateY(-120px)}
-}
-
-.panel{margin-top:10px}
-
-.history{
-display:flex;gap:6px;
-overflow-x:auto;margin-top:10px
-}
-.hist{
-padding:6px 10px;border-radius:10px;
-background:#12191f;font-size:12px;
-border:1px solid rgba(0,255,136,.3)
-}
-.low{color:var(--danger);border-color:rgba(255,75,75,.4)}
-
-.small{font-size:12px;opacity:.7;text-align:center}
-</style>
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
+        .history-item { min-width: 65px; padding: 8px; border-radius: 10px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.2); font-size: 13px; font-weight: bold; text-align: center; }
+        .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.2); }
+    </style>
 </head>
-
 <body>
-<div class="app">
 
-<div id="auth">
-<h2>🐪 Camel Dash Pro</h2>
-<input id="user" placeholder="اسم المستخدم">
-<input id="pass" type="password" placeholder="كلمة المرور">
-<button class="btn-main" onclick="login()">دخول / تسجيل</button>
-</div>
+<div class="app-container" id="app">
+    <div id="auth-screen" class="auth-container">
+        <h2>سباق الهجن العالمي 🐪</h2>
+        <div class="auth-tabs">
+            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')">تسجيل دخول</button>
+            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')">تسجيل جديد</button>
+        </div>
+        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
+        <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+        <button class="main-btn btn-bet" id="auth-submit" onclick="processAuth()">ابدأ اللعب الآن</button>
+    </div>
 
-<div id="game" style="display:none">
+    <div id="game-screen" style="display:none;">
+        <div class="header">
+            <span id="player-display" style="opacity: 0.7;">---</span>
+            <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
+        </div>
 
-<div class="header">
-<span id="name"></span>
-<div class="balance">💰 <span id="bal">0</span></div>
-</div>
+        <div id="main-timer">5</div>
+        <div id="mult-display" class="multiplier">1.00x</div>
+        
+        <div class="track" id="track-box">
+            <div id="camel-wrap" class="camel-wrapper">
+                <div class="camel">🐪</div>
+                <div id="dust-fx" class="dust"></div>
+            </div>
+            <div id="boom-fx" class="explosion"></div>
+        </div>
 
-<div id="timer">5</div>
-<div id="mult">1.00x</div>
+        <div class="controls">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>الرهان</label>
+                    <input type="number" id="bet-amount" class="field-small" value="10" min="1">
+                </div>
+                <div class="input-group">
+                    <label>سحب تلقائي (X)</label>
+                    <input type="number" id="auto-cashout" class="field-small" value="2.00" min="1.01" step="0.01">
+                </div>
+            </div>
+            <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
+        </div>
 
-<div class="track">
-<div id="camel" class="camel">🐪</div>
-</div>
-
-<div class="panel">
-<input id="bet" type="number" value="10" min="1">
-<input id="auto" type="number" placeholder="Auto Cashout (اختياري)">
-<button id="btn" class="btn-main" onclick="action()">وضع رهان</button>
-</div>
-
-<div class="history" id="history"></div>
-
-<div class="small">
-المستوى: <span id="lvl">1</span> |
-XP: <span id="xp">0</span>
-</div>
-
-</div>
+        <div id="history-list" class="history-list"></div>
+    </div>
 </div>
 
 <script>
-const sb=supabase.createClient(
-'https://uqmfwgdrlcqywxvdljlb.supabase.co',
-'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT'
-)
+    const CONF = { URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' };
+    const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
-let user=null,bet=0,joined=false,cashed=false
-let xp=0,level=1
-const WAIT=5,CYCLE=20
+    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
+    const CYCLE = 20, WAIT = 5;
 
-async function login(){
-const u=user=document.getElementById('user').value
-const p=document.getElementById('pass').value
-let {data}=await sb.from('Profiles')
-.select('*').eq('username',u).eq('password',p).maybeSingle()
+    // --- المحرك الصوتي (بدون ملفات) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    }
 
-if(!data){
-let res=await sb.from('Profiles')
-.insert([{username:u,password:p,balance:100,xp:0,level:1}])
-.select().single()
-data=res.data
-}
-start(data)
-}
+    // --- نظام التحقق والدخول ---
+    function switchAuth(mode) {
+        document.getElementById('login-tab').classList.toggle('active', mode === 'login');
+        document.getElementById('signup-tab').classList.toggle('active', mode === 'signup');
+        document.getElementById('auth-submit').innerText = mode === 'login' ? 'دخول' : 'إنشاء حساب';
+        window.authMode = mode;
+    }
 
-function start(d){
-user=d;xp=d.xp||0;level=d.level||1
-auth.style.display='none'
-game.style.display='block'
-updateUI()
-engine()
-}
+    async function processAuth() {
+        const u = document.getElementById('username').value, p = document.getElementById('password').value;
+        if (u.length < 3) return alert("الاسم قصير!");
+        if (window.authMode === 'signup') {
+            const { data: n } = await supabaseClient.from('Profiles').insert([{ username: u, password: p, balance: 100.00 }]).select().single();
+            if (n) launch(n);
+        } else {
+            const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
+            if (data) launch(data); else alert("خطأ في البيانات");
+        }
+    }
 
-function updateUI(){
-name.innerText=user.username
-bal.innerText=user.balance.toFixed(2)
-xpEl=xp;lvl.innerText=level
-xp.innerText=xp
-}
+    function launch(profile) {
+        user = profile;
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        updateUI(); syncHistory(); startEngine();
+    }
 
-function engine(){
-setInterval(()=>{
-let t=(Date.now()/1000)%CYCLE
-let crash=getCrash(Math.floor(Date.now()/1000/CYCLE))
+    // --- المحرك الرئيسي ---
+    function startEngine() {
+        setInterval(() => {
+            const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
+            const crashAt = getCrash(roundId);
 
-if(t<WAIT){
-timer.style.display='block'
-mult.style.display='none'
-timer.innerText=Math.ceil(WAIT-t)
-camel.style.left='0%'
-btn.className='btn-main'
-btn.innerText='وضع رهان'
-joined=false;cashed=false
-}else{
-timer.style.display='none'
-mult.style.display='block'
-let m=Math.pow(1.15,t-WAIT)
-mult.innerText=m.toFixed(2)+'x'
-camel.style.left=Math.min((t-WAIT)*6,45)+'%'
-if(joined&&!cashed){
-btn.className='btn-danger'
-btn.innerText='سحب'
-let a=parseFloat(auto.value)
-if(a&&m>=a)cash(m)
-}
-if(m>=crash&&!cashed){
-mult.style.color='var(--danger)'
-joined=false
-addHist(crash)
-}
-}
-},60)
-}
+            if (pos < WAIT) {
+                renderWait(Math.ceil(WAIT - pos));
+                window.isLogged = false;
+            } else {
+                const elapsed = pos - WAIT, mult = Math.pow(1.15, elapsed);
+                if (mult >= crashAt) {
+                    renderCrash(crashAt);
+                    if (!window.isLogged) { saveRound(crashAt.toFixed(2)); window.isLogged = true; }
+                } else {
+                    renderRace(mult, elapsed);
+                    checkAutoCashout(mult);
+                    if (betPlaced && !userInRace) joinRace();
+                }
+            }
+        }, 50);
+    }
 
-function getCrash(id){
-let r=Math.abs(Math.sin(id*999))*0.97
-return Math.min((0.99/(1-r)),400)
-}
+    function getCrash(id) {
+        let r = Math.abs(Math.sin(id * 456.789) * 10000) % 1;
+        return Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 450);
+    }
 
-function action(){
-let t=(Date.now()/1000)%CYCLE
-if(t<WAIT&&!joined){
-bet=parseFloat(betInput.value)
-if(user.balance<bet)return
-user.balance-=bet
-joined=true
-updateUI()
-}
-else if(joined&&!cashed){
-let m=parseFloat(mult.innerText)
-cash(m)
-}
-}
+    function renderWait(s) {
+        const timer = document.getElementById('main-timer');
+        timer.style.display = 'block'; timer.innerText = s;
+        document.getElementById('mult-display').style.display = 'none';
+        document.getElementById('camel-wrap').style.left = "0%";
+        document.getElementById('dust-fx').style.display = "none";
+        document.getElementById('boom-fx').style.display = "none";
+        document.getElementById('camel-wrap').style.opacity = "1";
+        if (s <= 3 && window.lastS !== s) { playSound(440, 'sine', 0.1); window.lastS = s; }
+        updateBtn(betPlaced ? "تم التجهيز..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
+    }
 
-function cash(m){
-cashed=true
-let win=bet*m
-user.balance+=win
-xp+=Math.floor(win/10)
-if(xp>level*100){level++}
-popup(win)
-updateUI()
-save()
-}
+    function renderRace(m, e) {
+        document.getElementById('main-timer').style.display = 'none';
+        const d = document.getElementById('mult-display');
+        d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
+        document.getElementById('camel-wrap').style.left = Math.min(e * 6, 75) + "%";
+        document.getElementById('dust-fx').style.display = "block";
+        bgPos -= (2 + m); document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
+        if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
+    }
 
-function popup(v){
-let p=document.createElement('div')
-p.className='popup'
-p.innerText='+'+v.toFixed(2)
-camel.parentNode.appendChild(p)
-p.style.left=camel.offsetLeft+'px'
-setTimeout(()=>p.remove(),1400)
-}
+    function checkAutoCashout(m) {
+        if (userInRace && !cashed) {
+            const autoLimit = parseFloat(document.getElementById('auto-cashout').value);
+            if (m >= autoLimit) doCashout(autoLimit);
+        }
+    }
 
-function addHist(v){
-let h=document.createElement('div')
-h.className='hist '+(v<2?'low':'')
-h.innerText=v.toFixed(2)+'x'
-history.prepend(h)
-if(history.children.length>10)history.lastChild.remove()
-}
+    function renderCrash(cp) {
+        const d = document.getElementById('mult-display'); d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
+        if (document.getElementById('camel-wrap').style.opacity !== "0") {
+            playSound(100, 'sawtooth', 0.4);
+            document.getElementById('app').classList.add('shake');
+            setTimeout(() => document.getElementById('app').classList.remove('shake'), 400);
+            const boom = document.getElementById('boom-fx');
+            boom.style.left = document.getElementById('camel-wrap').style.left;
+            boom.style.display = "block";
+            document.getElementById('camel-wrap').style.opacity = "0";
+        }
+        updateBtn("انفجر الجمل!", "btn-waiting");
+        userInRace = false; betPlaced = false;
+    }
 
-async function save(){
-await sb.from('Profiles')
-.update({balance:user.balance,xp:xp,level:level})
-.eq('id',user.id)
-}
+    function handleAction() {
+        const pos = (Date.now() / 1000) % CYCLE;
+        if (pos < WAIT) betPlaced = !betPlaced;
+        else if (userInRace && !cashed) doCashout(parseFloat(document.getElementById('mult-display').innerText));
+    }
+
+    function joinRace() {
+        currentBet = parseFloat(document.getElementById('bet-amount').value);
+        if (user.balance >= currentBet) {
+            userInRace = true; cashed = false; betPlaced = false;
+            user.balance -= currentBet; updateUI(); saveBalance();
+        }
+    }
+
+    function doCashout(m) {
+        if (cashed) return; cashed = true;
+        const win = currentBet * m; user.balance += win;
+        playSound(880, 'sine', 0.2);
+        document.getElementById('bal-box').classList.add('win-glow');
+        setTimeout(() => document.getElementById('bal-box').classList.remove('win-glow'), 500);
+        updateUI(); saveBalance(); updateBtn("تم السحب ✅", "btn-waiting");
+    }
+
+    function updateUI() {
+        document.getElementById('balance').innerText = user.balance.toFixed(2);
+        document.getElementById('player-display').innerText = user.username;
+    }
+
+    function updateBtn(t, c, s="") {
+        const b = document.getElementById('action-btn'); b.className = `main-btn ${c}`;
+        b.innerHTML = s ? `<span>${t}</span><br><small>💰 ${s}</small>` : t;
+    }
+
+    async function saveRound(p) { pushUIHist(p); await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) }); }
+    async function syncHistory() {
+        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+        if (data) data.forEach(r => pushUIHist(r.crash_point.toFixed(2)));
+    }
+    function pushUIHist(v) {
+        const l = document.getElementById('history-list'); const i = document.createElement('div');
+        i.className = `history-item ${v < 2 ? 'hist-crash' : ''}`; i.innerText = v + 'x';
+        l.insertBefore(i, l.firstChild); if (l.children.length > 10) l.removeChild(l.lastChild);
+    }
+    async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
+
+    window.authMode = 'login';
 </script>
 </body>
 </html>
