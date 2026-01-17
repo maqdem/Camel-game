@@ -18,9 +18,9 @@
         .login-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         .signup-btn { background: var(--accent); color: #000; }
 
-        /* شاشة تسجيل الدخول المنبثقة */
+        /* شاشة تسجيل الدخول المنبثقة (Overlay) */
         #auth-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 20, 26, 0.98); 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 20, 26, 0.95); 
             z-index: 100; display: none; flex-direction: column; justify-content: center; padding: 30px; border-radius: 30px;
         }
 
@@ -30,29 +30,8 @@
         #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; }
         .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
         
-        /* المسار مع الخلفية المتحركة */
-        .track { 
-            height: 130px; 
-            background: #12191f; 
-            border-radius: 20px; 
-            position: relative; 
-            overflow: hidden; 
-            border: 2px solid #2d333b; 
-            margin: 15px 0;
-            background-image: linear-gradient(90deg, #1c262d 2px, transparent 2px);
-            background-size: 40px 100%; /* خطوط الطريق */
-        }
-        
-        /* شكل الجمل */
-        .camel { 
-            position: absolute; 
-            bottom: 20px; 
-            left: 0; 
-            font-size: 55px; 
-            z-index: 5; 
-            transition: left 0.1s linear;
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
-        }
+        .track { height: 130px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0; background-size: 60px 100%; }
+        .camel { position: absolute; bottom: 15px; left: 0; font-size: 50px; z-index: 5; transition: left 0.1s linear; }
 
         .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 10px; }
         button.main-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; }
@@ -62,7 +41,7 @@
 
         .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
         .history-item { min-width: 60px; padding: 7px; border-radius: 9px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.15); text-align: center; font-weight: bold; font-size: 12px; }
-        .hist-crash { color: var(--error); border-color: var(--error); }
+        .hist-crash { color: var(--error); }
     </style>
 </head>
 <body>
@@ -102,13 +81,13 @@
 </div>
 
 <script>
-    // الإعدادات وقاعدة البيانات
     const CONF = { URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' };
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
     let user = null, currentMode = 'signup', betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
     const CYCLE = 20, WAIT = 5;
 
+    // فتح نافذة التسجيل
     function openAuth(mode) {
         currentMode = mode;
         document.getElementById('auth-title').innerText = mode === 'login' ? 'تسجيل دخول' : 'إنشاء حساب جديد';
@@ -118,14 +97,12 @@
 
     async function processAuth() {
         const u = document.getElementById('username').value, p = document.getElementById('password').value;
-        if (!u || !p) return alert("يرجى ملء البيانات");
-
         if (currentMode === 'signup') {
-            const { data: n, error } = await supabaseClient.from('Profiles').insert([{ username: u, password: p, balance: 100.00 }]).select().single();
-            if (n) loginSuccess(n); else alert("الاسم محجوز أو حدث خطأ");
+            const { data: n } = await supabaseClient.from('Profiles').insert([{ username: u, password: p, balance: 100.00 }]).select().single();
+            if (n) loginSuccess(n);
         } else {
             const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
-            if (data) loginSuccess(data); else alert("بيانات الدخول خاطئة");
+            if (data) loginSuccess(data); else alert("خطأ في البيانات");
         }
     }
 
@@ -137,6 +114,7 @@
         updateUI();
     }
 
+    // المحرك يعمل فوراً عند فتح الرابط
     function startEngine() {
         setInterval(() => {
             const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
@@ -176,14 +154,8 @@
         document.getElementById('main-timer').style.display = 'none';
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x"; d.style.color = "var(--accent)";
-        
-        // تحريك الجمل
         document.getElementById('camel').style.left = Math.min(e * 5, 45) + "%";
-        
-        // تحريك الخلفية (الرمال)
-        bgPos -= (2 + m * 2); 
-        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
-        
+        bgPos -= (2 + m); document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
         if (user && userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
     }
 
@@ -196,16 +168,11 @@
     function handleAction() {
         if (!user) return openAuth('signup');
         const pos = (Date.now() / 1000) % CYCLE;
-        if (pos < WAIT) {
-            betPlaced = !betPlaced;
-        } else if (userInRace && !cashed) {
+        if (pos < WAIT) betPlaced = !betPlaced;
+        else if (userInRace && !cashed) {
             const m = parseFloat(document.getElementById('mult-display').innerText);
-            cashed = true; 
-            const win = currentBet * m; 
-            user.balance += win;
-            updateUI(); 
-            saveBalance(); 
-            updateBtn("تم السحب!", "btn-locked");
+            cashed = true; const win = currentBet * m; user.balance += win;
+            updateUI(); saveBalance(); updateBtn("تم السحب!", "btn-locked");
         }
     }
 
@@ -214,9 +181,6 @@
         if (user.balance >= currentBet) {
             userInRace = true; cashed = false; betPlaced = false;
             user.balance -= currentBet; updateUI(); saveBalance();
-        } else {
-            alert("الرصيد غير كافٍ");
-            betPlaced = false;
         }
     }
 
@@ -243,6 +207,7 @@
 
     async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
 
+    // بدء العمل فوراً
     syncHistory();
     startEngine();
 </script>
