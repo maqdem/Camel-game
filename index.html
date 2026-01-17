@@ -181,4 +181,147 @@
     function triggerCrashLocally(val) {
         if (!roundActive) return;
         roundActive = false;
-        renderCrash
+        renderCrash(val);
+        syncHistory();
+        setTimeout(() => {
+            startNextRound(val);
+        }, 2500); // وقت راحة قصير قبل الجولة التالية
+    }
+
+    function startNextRound(lastVal) {
+        const seed = Math.floor(Date.now() / 3000);
+        roundData = { status: 'wait', startTime: Date.now(), crashAt: generateCrash(seed) };
+        roundActive = true;
+        betPlaced = false; userInRace = false; cashed = false;
+        document.getElementById('mult-display').style.color = "var(--accent)";
+        document.getElementById('camel-wrap').style.opacity = "1";
+        document.getElementById('boom-fx').style.display = "none";
+    }
+
+    function generateCrash(seed) {
+        let r = Math.abs(Math.sin(seed) * 10000) % 1;
+        return Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 1000);
+    }
+
+    function engineLoop() {
+        const now = Date.now();
+        const elapsed = (now - roundData.startTime) / 1000;
+
+        if (elapsed < 5) {
+            renderWait(Math.ceil(5 - elapsed));
+        } else if (roundActive) {
+            const raceTime = elapsed - 5;
+            const mult = Math.pow(1.08, raceTime * 2); // نمو سريع وسلس
+            
+            if (mult >= roundData.crashAt) {
+                if (!window.reporting) {
+                    window.reporting = true;
+                    saveRound(roundData.crashAt);
+                    setTimeout(() => window.reporting = false, 1000);
+                }
+            } else {
+                renderRace(mult, raceTime);
+                if (userInRace && !cashed && autoEnabled) {
+                    const target = parseFloat(document.getElementById('auto-cashout').value);
+                    if (mult >= target) doCashout(target);
+                }
+                if (betPlaced && !userInRace) joinRace();
+            }
+        }
+        requestAnimationFrame(engineLoop);
+    }
+
+    function renderWait(s) {
+        const timer = document.getElementById('main-timer');
+        timer.style.display = 'block'; timer.innerText = s;
+        document.getElementById('mult-display').style.display = 'none';
+        document.getElementById('camel-wrap').style.left = "0%";
+        document.getElementById('dust-fx').style.display = "none";
+        updateBtn(betPlaced ? "تم التجهيز..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
+    }
+
+    function renderRace(m, e) {
+        document.getElementById('main-timer').style.display = 'none';
+        const d = document.getElementById('mult-display');
+        d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
+        document.getElementById('camel-wrap').style.left = Math.min(e * 6, 80) + "%";
+        document.getElementById('dust-fx').style.display = "block";
+        bgPos -= (2 + m); 
+        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
+        if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
+    }
+
+    function renderCrash(cp) {
+        const d = document.getElementById('mult-display'); 
+        d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
+        playSound(100, 'sawtooth', 0.4);
+        document.getElementById('app').classList.add('shake');
+        setTimeout(() => document.getElementById('app').classList.remove('shake'), 400);
+        const boom = document.getElementById('boom-fx');
+        boom.style.left = document.getElementById('camel-wrap').style.left;
+        boom.style.display = "block";
+        document.getElementById('camel-wrap').style.opacity = "0";
+        updateBtn("انفجر الجمل!", "btn-waiting");
+    }
+
+    function handleAction() {
+        const elapsed = (Date.now() - roundData.startTime) / 1000;
+        if (elapsed < 5) betPlaced = !betPlaced;
+        else if (userInRace && !cashed) doCashout(parseFloat(document.getElementById('mult-display').innerText));
+    }
+
+    function joinRace() {
+        currentBet = parseFloat(document.getElementById('bet-amount').value);
+        if (user.balance >= currentBet) {
+            userInRace = true; cashed = false; betPlaced = false;
+            user.balance -= currentBet; updateUI(); saveBalance();
+        }
+    }
+
+    function doCashout(m) {
+        if (cashed || !userInRace) return; cashed = true;
+        const win = currentBet * m; user.balance += win;
+        playSound(880, 'sine', 0.2);
+        document.getElementById('bal-box').classList.add('win-glow');
+        setTimeout(() => document.getElementById('bal-box').classList.remove('win-glow'), 500);
+        updateUI(); saveBalance(); updateBtn("تم السحب ✅", "btn-waiting");
+    }
+
+    function updateUI() {
+        document.getElementById('balance').innerText = user.balance.toFixed(2);
+        document.getElementById('player-display').innerText = user.username;
+    }
+
+    function updateBtn(t, c, s="") {
+        const b = document.getElementById('action-btn'); b.className = `main-btn ${c}`;
+        b.innerHTML = s ? `<span>${t}</span><br><small>💰 ${s}</small>` : t;
+    }
+
+    async function saveRound(p) { 
+        await supabaseClient.rpc('add_crash_record', { crash_val: parseFloat(p) }); 
+    }
+
+    async function syncHistory() {
+        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+        if (data) {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            data.forEach(r => {
+                const val = r.crash_point.toFixed(2);
+                const i = document.createElement('div');
+                i.className = `history-item ${val < 2 ? 'hist-crash' : ''}`;
+                i.innerText = val + 'x';
+                list.appendChild(i);
+            });
+        }
+    }
+
+    async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
+
+    window.authMode = 'login';
+    // بدء الجولة الأولى
+    roundActive = true;
+    roundData.startTime = Date.now();
+</script>
+</body>
+</html>
