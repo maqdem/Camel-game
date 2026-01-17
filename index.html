@@ -10,28 +10,59 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         
-        .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; position: relative; }
+        .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; position: relative; transition: transform 0.1s; }
         
-        /* أزرار التسجيل العلوية */
+        /* أنيميشن الاهتزاز عند التحطم */
+        .crash-shake { animation: shake 0.4s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
         .top-auth-bar { display: flex; gap: 10px; margin-bottom: 15px; }
         .top-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
         .login-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         .signup-btn { background: var(--accent); color: #000; }
 
-        /* شاشة تسجيل الدخول المنبثقة (Overlay) */
         #auth-overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 20, 26, 0.95); 
             z-index: 100; display: none; flex-direction: column; justify-content: center; padding: 30px; border-radius: 30px;
         }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; }
+        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; transition: all 0.3s; }
+        
+        /* أنيميشن الربح */
+        .win-glow { box-shadow: 0 0 20px var(--gold); transform: scale(1.1); }
 
         #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; }
         .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
         
-        .track { height: 130px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0; background-size: 60px 100%; }
-        .camel { position: absolute; bottom: 15px; left: 0; font-size: 50px; z-index: 5; transition: left 0.1s linear; }
+        /* المسار والخلفية المتحركة */
+        .track { 
+            height: 130px; 
+            background: #12191f; 
+            border-radius: 20px; 
+            position: relative; 
+            overflow: hidden; 
+            border: 2px solid #2d333b; 
+            margin: 15px 0;
+            background-image: linear-gradient(90deg, #1c262d 2px, transparent 2px);
+            background-size: 40px 100%;
+        }
+        
+        .camel { 
+            position: absolute; 
+            bottom: 15px; 
+            left: 0; 
+            font-size: 50px; 
+            z-index: 5; 
+            transition: left 0.1s linear, opacity 0.2s, transform 0.2s; 
+            transform: scaleX(-1); /* عكس اتجاه النظر لليسار */
+        }
+        .camel.crashed { transform: scaleX(-1) translateY(20px) rotate(90deg); opacity: 0; }
 
         .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 10px; }
         button.main-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; }
@@ -41,12 +72,12 @@
 
         .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
         .history-item { min-width: 60px; padding: 7px; border-radius: 9px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.15); text-align: center; font-weight: bold; font-size: 12px; }
-        .hist-crash { color: var(--error); }
+        .hist-crash { color: var(--error); border-color: var(--error); }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container" id="main-app">
     <div id="top-bar" class="top-auth-bar">
         <button class="top-btn login-btn" onclick="openAuth('login')">دخول</button>
         <button class="top-btn signup-btn" onclick="openAuth('signup')">انضم الآن</button>
@@ -62,7 +93,7 @@
 
     <div id="player-header" class="header" style="display:none">
         <span id="player-name" style="opacity: 0.7;">---</span>
-        <div class="balance-box">💰 <span id="balance">0.00</span></div>
+        <div id="balance-container" class="balance-box">💰 <span id="balance">0.00</span></div>
     </div>
 
     <div id="main-timer">5</div>
@@ -85,9 +116,8 @@
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
     let user = null, currentMode = 'signup', betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
-    const CYCLE = 20, WAIT = 5;
+    const CYCLE = 12, WAIT = 3; // تقليل وقت الانتظار والدورة (انتظار 3 ثواني فقط)
 
-    // فتح نافذة التسجيل
     function openAuth(mode) {
         currentMode = mode;
         document.getElementById('auth-title').innerText = mode === 'login' ? 'تسجيل دخول' : 'إنشاء حساب جديد';
@@ -114,7 +144,6 @@
         updateUI();
     }
 
-    // المحرك يعمل فوراً عند فتح الرابط
     function startEngine() {
         setInterval(() => {
             const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
@@ -142,10 +171,13 @@
     }
 
     function renderWait(s) {
+        const c = document.getElementById('camel');
+        c.className = 'camel';
+        c.style.opacity = "1";
         document.getElementById('main-timer').style.display = 'block';
         document.getElementById('mult-display').style.display = 'none';
         document.getElementById('main-timer').innerText = s;
-        document.getElementById('camel').style.left = "0%";
+        c.style.left = "0%";
         if (!user) updateBtn("سجل الدخول للمراهنة", "btn-locked");
         else updateBtn(betPlaced ? "تم تجهيز الرهان" : "وضع رهان", betPlaced ? "btn-locked" : "btn-bet");
     }
@@ -155,13 +187,27 @@
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x"; d.style.color = "var(--accent)";
         document.getElementById('camel').style.left = Math.min(e * 5, 45) + "%";
-        bgPos -= (2 + m); document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
+        
+        // تحريك الخلفية بناءً على السرعة (Multiplier)
+        bgPos -= (2 + m * 2); 
+        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
+        
         if (user && userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
     }
 
     function renderCrash(cp) {
-        const d = document.getElementById('mult-display'); d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
-        updateBtn(user ? "انفجر الجمل!" : "سجل الدخول للمراهنة", "btn-locked");
+        const d = document.getElementById('mult-display'); 
+        d.innerText = cp.toFixed(2) + "x"; 
+        d.style.color = "var(--error)";
+        
+        const camel = document.getElementById('camel');
+        if (!camel.classList.contains('crashed')) {
+            camel.classList.add('crashed'); // أنيميشن السقوط
+            document.getElementById('main-app').classList.add('crash-shake'); // اهتزاز الشاشة
+            setTimeout(() => document.getElementById('main-app').classList.remove('crash-shake'), 400);
+        }
+        
+        updateBtn(user ? "سقط الجمل!" : "سجل الدخول للمراهنة", "btn-locked");
         userInRace = false;
     }
 
@@ -171,8 +217,18 @@
         if (pos < WAIT) betPlaced = !betPlaced;
         else if (userInRace && !cashed) {
             const m = parseFloat(document.getElementById('mult-display').innerText);
-            cashed = true; const win = currentBet * m; user.balance += win;
-            updateUI(); saveBalance(); updateBtn("تم السحب!", "btn-locked");
+            cashed = true; 
+            const win = currentBet * m; 
+            user.balance += win;
+            
+            // أنيميشن الربح
+            const balBox = document.getElementById('balance-container');
+            balBox.classList.add('win-glow');
+            setTimeout(() => balBox.classList.remove('win-glow'), 1000);
+            
+            updateUI(); 
+            saveBalance(); 
+            updateBtn("تم السحب!", "btn-locked");
         }
     }
 
@@ -207,7 +263,6 @@
 
     async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
 
-    // بدء العمل فوراً
     syncHistory();
     startEngine();
 </script>
