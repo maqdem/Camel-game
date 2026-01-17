@@ -36,7 +36,6 @@
         .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; transition: 0.3s; }
         .auto-active { border-color: var(--accent); background: rgba(0, 255, 136, 0.05); }
 
-        /* زر التبديل ON/OFF */
         .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 12px; cursor: pointer; border: 1px solid #333; transition: 0.3s; min-width: 85px; justify-content: space-between; position: relative; }
         .toggle-container.on { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
         .toggle-container.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
@@ -133,6 +132,7 @@
         updateUI();
     }
 
+    // تعديل: تفعيل الرهان تلقائياً عند تشغيل الزر
     function toggleAuto() {
         if (userInRace) return;
         autoOn = !autoOn;
@@ -140,6 +140,11 @@
         const input = document.getElementById('auto-val');
         container.classList.toggle('on', autoOn);
         input.classList.toggle('auto-active', autoOn);
+        
+        // إذا تم تشغيل الوضع التلقائي وكان في وقت الانتظار، ضع رهان فوراً
+        if (autoOn && currentGameState === "waiting") {
+            betPlaced = true;
+        }
     }
 
     function globalEngine() {
@@ -149,6 +154,10 @@
 
             if (pos < WAIT) {
                 if (currentGameState !== "waiting") { currentGameState = "waiting"; resetVisuals(); syncHistory(); }
+                
+                // ميزة جديدة: إذا كان الوضع التلقائي يعمل، تأكد دائماً أن الرهان موضوع
+                if (autoOn) betPlaced = true; 
+                
                 renderWait(Math.ceil(WAIT - pos));
             } else {
                 const elapsed = pos - WAIT, mult = Math.pow(1.12, elapsed);
@@ -157,6 +166,8 @@
                 } else {
                     currentGameState = "racing";
                     renderRace(mult, elapsed);
+                    
+                    // السحب التلقائي
                     if (userInRace && !cashed && autoOn) {
                         if (mult >= parseFloat(document.getElementById('auto-val').value)) doCashout(mult);
                     }
@@ -171,7 +182,11 @@
         document.getElementById('main-timer').innerText = s;
         document.getElementById('mult-display').style.display = 'none';
         document.getElementById('auto-toggle').classList.remove('disabled');
-        updateBtn(betPlaced ? "تم تجهيز الرهان..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
+        
+        let btnText = betPlaced ? "تم تجهيز الرهان..." : "وضع رهان";
+        if (autoOn) btnText = "رهان تلقائي فعال..";
+        
+        updateBtn(btnText, betPlaced ? "btn-waiting" : "btn-bet");
     }
 
     function renderRace(m, e) {
@@ -190,17 +205,18 @@
         document.getElementById('boom-fx').style.display = "block";
         document.getElementById('camel-wrap').style.opacity = "0";
         updateBtn("انفجر الجمل!", "btn-waiting");
-        userInRace = false; betPlaced = false;
+        userInRace = false; betPlaced = false; 
     }
 
     function doCashout(m) {
         if (cashed || !userInRace) return;
         cashed = true; user.balance += (currentBet * m);
-        updateUI(); saveBalance(); updateBtn("تم السحب ✅", "btn-waiting");
+        updateUI(); saveBalance(); 
+        updateBtn(autoOn ? "سحب تلقائي ✅" : "تم السحب ✅", "btn-waiting");
     }
 
     function handleAction() {
-        if (!user) return;
+        if (!user || autoOn) return; // منع النقر اليدوي إذا كان التلقائي يعمل
         if (currentGameState === "waiting") betPlaced = !betPlaced;
         else if (userInRace && !cashed) doCashout(parseFloat(document.getElementById('mult-display').innerText));
     }
@@ -210,6 +226,12 @@
         if (user.balance >= currentBet) {
             userInRace = true; cashed = false; betPlaced = false;
             user.balance -= currentBet; updateUI(); saveBalance();
+        } else {
+            // إذا رصيد المستخدم خلص، أوقف التلقائي
+            autoOn = false;
+            document.getElementById('auto-toggle').classList.remove('on');
+            document.getElementById('auto-val').classList.remove('auto-active');
+            alert("رصيدك غير كافٍ للاستمرار في الرهان التلقائي");
         }
     }
 
