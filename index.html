@@ -3,59 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن العالمي | Pro Version</title>
+    <title>سباق الهجن العالمي | Pro Edition</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         
-        .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; position: relative; }
+        .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
         
-        /* انميشن الاهتزاز */
-        .shake { animation: shakeAnim 0.3s linear; }
-        @keyframes shakeAnim { 0% { transform: translate(2px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(0); } }
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
+        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; }
 
-        #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; }
-        .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
+        #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; }
+        .multiplier { font-size: 80px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
         
         .track { 
             height: 140px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0;
-            background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%;
+            background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%);
+            background-size: 60px 100%;
         }
         
-        .camel-wrapper { position: absolute; bottom: 15px; left: 0; z-index: 5; display: flex; align-items: center; transition: left 0.2s linear; }
-        .camel { font-size: 50px; transform: scaleX(-1); }
-        .dust { position: absolute; bottom: 5px; left: -5px; width: 15px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 50%; filter: blur(4px); display: none; }
+        /* تحسين وضعية الجمل */
+        .camel-wrapper { position: absolute; bottom: 15px; left: 0; transition: left 0.3s ease-out; z-index: 5; display: flex; align-items: center; }
+        .camel { font-size: 55px; transform: scaleX(-1); }
+        .dust { position: absolute; bottom: 5px; left: -10px; width: 20px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(5px); display: none; }
 
-        .explosion { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.4s forwards; }
-        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+        .explosion { position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
+        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
 
         .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 12px; }
         .input-row { display: flex; gap: 10px; }
         .input-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
         .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; }
 
-        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
 
-        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; }
-        .history-item { min-width: 60px; padding: 6px; border-radius: 8px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.1); font-size: 12px; font-weight: bold; text-align: center; }
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; }
+        .history-item { min-width: 65px; padding: 8px; border-radius: 10px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.2); font-size: 13px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="app-container" id="app">
-    <div id="auth-screen" style="padding: 20px;">
-        <h2 style="text-align:center; color:var(--accent);">دخول السباق 🐪</h2>
+    <div id="auth-screen">
+        <h2 style="text-align:center; color:var(--accent);">سباق الهجن 🐪</h2>
         <input type="text" id="username" class="field-small" placeholder="اسم المستخدم" style="margin-bottom:10px;">
-        <input type="password" id="password" class="field-small" placeholder="كلمة المرور" style="margin-bottom:15px;">
-        <button class="main-btn btn-bet" onclick="processAuth()">ابدأ اللعب</button>
+        <button class="main-btn btn-bet" onclick="processAuth()">دخول</button>
     </div>
 
     <div id="game-screen" style="display:none;">
@@ -78,11 +78,11 @@
         <div class="controls">
             <div class="input-row">
                 <div class="input-group">
-                    <label style="font-size:10px; color:#888;">الرهان</label>
+                    <label style="font-size:11px; color:#888;">الرهان</label>
                     <input type="number" id="bet-amount" class="field-small" value="10">
                 </div>
                 <div class="input-group">
-                    <label style="font-size:10px; color:#888;">سحب تلقائي</label>
+                    <label style="font-size:11px; color:#888;">سحب تلقائي</label>
                     <input type="number" id="auto-cashout" class="field-small" value="2.00">
                 </div>
             </div>
@@ -96,10 +96,9 @@
     const CONF = { URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' };
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
-    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
+    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0, roundActive = false;
     const CYCLE = 20, WAIT = 5;
 
-    // --- المحرك الرئيسي ---
     async function processAuth() {
         const u = document.getElementById('username').value;
         const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).maybeSingle();
@@ -116,26 +115,24 @@
         setInterval(() => {
             const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
             
-            // حساب نقطة الانفجار بشكل ثابت لكل جولة
-            let r = Math.abs(Math.sin(roundId * 987.654) * 10000) % 1;
-            const crashAt = Math.min(parseFloat((0.99 / (1 - r * 0.99)).toFixed(2)), 500);
+            // حساب ثابت لنقطة الانفجار
+            let r = Math.abs(Math.sin(roundId * 12.9898) * 43758.5453) % 1;
+            const crashAt = Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 500);
 
             if (pos < WAIT) {
                 renderWait(Math.ceil(WAIT - pos));
-                window.isLogged = false;
+                roundActive = true; window.isLogged = false;
             } else {
                 const elapsed = pos - WAIT;
-                const mult = Math.pow(1.15, elapsed);
+                const mult = Math.pow(1.12, elapsed); // سرعة عداد متزنة
 
-                // تم إصلاح الخطأ: الانفجار يحدث بناءً على الوقت المحسوب أو تجاوز القيمة
-                if (mult >= crashAt) {
-                    if (!window.isLogged) { 
-                        renderCrash(crashAt);
-                        saveRound(crashAt.toFixed(2)); 
-                        window.isLogged = true; 
-                    }
-                } else {
+                // فحص الانفجار المضمون
+                if (mult >= crashAt && roundActive) {
+                    renderCrash(crashAt);
+                    if (!window.isLogged) { saveRound(crashAt.toFixed(2)); window.isLogged = true; }
+                } else if (roundActive) {
                     renderRace(mult, elapsed);
+                    // فحص السحب التلقائي
                     if (userInRace && !cashed) {
                         const auto = parseFloat(document.getElementById('auto-cashout').value);
                         if (mult >= auto) doCashout(auto);
@@ -147,13 +144,13 @@
     }
 
     function renderWait(s) {
-        document.getElementById('main-timer').style.display = 'block';
+        const timer = document.getElementById('main-timer');
+        timer.style.display = 'block'; timer.innerText = s;
         document.getElementById('mult-display').style.display = 'none';
-        document.getElementById('main-timer').innerText = s;
         document.getElementById('camel-wrap').style.left = "0%";
         document.getElementById('camel-wrap').style.opacity = "1";
         document.getElementById('boom-fx').style.display = "none";
-        updateBtn(betPlaced ? "تم تجهيز الرهان" : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
+        updateBtn(betPlaced ? "تم التجهيز..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
     }
 
     function renderRace(m, e) {
@@ -161,28 +158,29 @@
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
         d.style.color = "var(--accent)";
-        
-        // إصلاح الحركة: أبطأ ولا يصطدم بالحافة (حد أقصى 60%)
-        document.getElementById('camel-wrap').style.left = Math.min(e * 3.5, 60) + "%";
+
+        // حركة الجمل: أبطأ وبحد أقصى 65% من الشاشة
+        const movePos = Math.min(e * 3.5, 65); 
+        document.getElementById('camel-wrap').style.left = movePos + "%";
         document.getElementById('dust-fx').style.display = "block";
         
-        bgPos -= (1 + m * 0.5); 
+        bgPos -= (1.5 + m * 0.3);
         document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
         
         if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
     }
 
     function renderCrash(cp) {
+        roundActive = false;
         const d = document.getElementById('mult-display');
-        d.innerText = cp.toFixed(2) + "x";
-        d.style.color = "var(--error)";
+        d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
         
         const boom = document.getElementById('boom-fx');
         boom.style.left = document.getElementById('camel-wrap').style.left;
         boom.style.display = "block";
         document.getElementById('camel-wrap').style.opacity = "0";
         document.getElementById('app').classList.add('shake');
-        setTimeout(() => document.getElementById('app').classList.remove('shake'), 300);
+        setTimeout(() => document.getElementById('app').classList.remove('shake'), 400);
 
         updateBtn("انفجر الجمل!", "btn-waiting");
         userInRace = false; betPlaced = false;
