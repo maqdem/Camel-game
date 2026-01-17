@@ -8,14 +8,14 @@
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-y: auto; padding: 20px 0; }
+        .app-container { width: 95%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; }
         #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; }
         .multiplier { font-size: 80px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
         .track { height: 140px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0; background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%; }
-        .camel-wrapper { position: absolute; bottom: 15px; left: 0; z-index: 5; }
+        .camel-wrapper { position: absolute; bottom: 15px; left: 0; z-index: 5; transition: left 0.05s linear; }
         .camel { font-size: 55px; transform: scaleX(-1); }
         .explosion { position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
         @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
@@ -26,15 +26,23 @@
         .toggle-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .toggle-btn { padding: 4px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #888; font-size: 11px; cursor: pointer; font-weight: 900; }
         .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; }
+        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
         
-        /* ستايل سجل النتائج الجديد */
+        /* سجل النتائج */
         .history-list { display: flex; gap: 8px; overflow-x: auto; margin-top: 15px; padding: 5px; flex-direction: row-reverse; scrollbar-width: none; }
         .history-item { min-width: 65px; background: #12191f; padding: 8px; border-radius: 10px; text-align: center; color: var(--accent); border: 1px solid rgba(0,255,136,0.1); font-weight: bold; font-size: 13px; }
         .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.1); }
+
+        /* جدول الرهانات الحية - الجديد */
+        .live-bets { margin-top: 20px; background: #0d1117; border-radius: 15px; padding: 10px; }
+        .bets-header { display: flex; justify-content: space-between; font-size: 12px; color: #666; padding: 5px 10px; border-bottom: 1px solid #222; }
+        .bets-container { max-height: 150px; overflow-y: auto; }
+        .bet-row { display: flex; justify-content: space-between; padding: 8px 10px; font-size: 13px; border-bottom: 1px solid #1a1a1a; transition: 0.3s; }
+        .bet-row.cashed { color: var(--accent); background: rgba(0, 255, 136, 0.05); }
+        .bet-row.lost { color: #555; }
     </style>
 </head>
 <body>
@@ -74,7 +82,18 @@
             </div>
             <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
         </div>
+        
         <div id="history-list" class="history-list"></div>
+
+        <div class="live-bets">
+            <div class="bets-header">
+                <span>اللاعب</span>
+                <span>الرهان</span>
+                <span>الربح</span>
+            </div>
+            <div id="bets-container" class="bets-container">
+                </div>
+        </div>
     </div>
 </div>
 
@@ -85,6 +104,21 @@
     let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0;
     let autoEnabled = true, gameState = "WAITING", currentMult = 1.00, crashAt = 0;
     let localHistory = [];
+    let liveBets = {}; // لتخزين رهانات اللاعبين الآخرين في الجولة الحالية
+
+    // قناة Realtime للتواصل بين اللاعبين
+    const gameChannel = supabaseClient.channel('race-room', {
+        config: { broadcast: { self: true } }
+    });
+
+    gameChannel
+        .on('broadcast', { event: 'player_bet' }, (payload) => {
+            addLiveBetUI(payload.payload);
+        })
+        .on('broadcast', { event: 'player_cashout' }, (payload) => {
+            updateLiveBetUI(payload.payload);
+        })
+        .subscribe();
 
     function toggleAuto() {
         autoEnabled = !autoEnabled;
@@ -102,7 +136,7 @@
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         updateUI();
-        syncHistory(); // جلب السجل عند البداية
+        syncHistory();
         runGameLoop();
     }
 
@@ -116,6 +150,9 @@
     function runGameLoop() {
         gameState = "WAITING";
         crashAt = generateNewCrash();
+        document.getElementById('bets-container').innerHTML = ''; // تصفير قائمة الرهانات
+        liveBets = {};
+        
         let timer = 5;
         const waitInterval = setInterval(() => {
             renderWait(timer);
@@ -190,7 +227,7 @@
         document.getElementById('action-btn').innerText = "انفجر!";
         document.getElementById('action-btn').className = "main-btn btn-waiting";
         
-        addLocalHistory(cp); // إضافة للسجل فوراً
+        addLocalHistory(cp);
         saveRound(cp);
         userInRace = false; betPlaced = false; cashed = false;
     }
@@ -205,21 +242,57 @@
         if (user.balance >= currentBet) {
             userInRace = true; cashed = false; betPlaced = false;
             user.balance -= currentBet; updateUI(); saveBalance();
+            
+            // إرسال رهانك للآخرين
+            gameChannel.send({
+                type: 'broadcast',
+                event: 'player_bet',
+                payload: { username: user.username, amount: currentBet }
+            });
         }
     }
 
     function doCashout(m) {
         if (cashed || !userInRace) return;
         cashed = true;
-        user.balance += (currentBet * m);
+        let profit = currentBet * m;
+        user.balance += profit;
         updateUI(); saveBalance();
         document.getElementById('action-btn').innerText = "تم السحب ✅";
         document.getElementById('action-btn').className = "main-btn btn-waiting";
+
+        // إرسال السحب للآخرين
+        gameChannel.send({
+            type: 'broadcast',
+            event: 'player_cashout',
+            payload: { username: user.username, multiplier: m.toFixed(2), win: profit.toFixed(2) }
+        });
+    }
+
+    // دوال إدارة واجهة المراهنين الآخرين
+    function addLiveBetUI(data) {
+        const container = document.getElementById('bets-container');
+        const row = document.createElement('div');
+        row.className = 'bet-row';
+        row.id = `bet-${data.username}`;
+        row.innerHTML = `
+            <span>${data.username}</span>
+            <span>💰${data.amount}</span>
+            <span class="win-val">-</span>
+        `;
+        container.prepend(row);
+    }
+
+    function updateLiveBetUI(data) {
+        const row = document.getElementById(`bet-${data.username}`);
+        if (row) {
+            row.classList.add('cashed');
+            row.querySelector('.win-val').innerText = `${data.multiplier}x (+${data.win})`;
+        }
     }
 
     function updateUI() { document.getElementById('balance').innerText = user.balance.toFixed(2); document.getElementById('player-display').innerText = user.username; }
 
-    // --- نظام السجل المتطور ---
     function addLocalHistory(v) {
         const val = parseFloat(v).toFixed(2);
         localHistory.unshift(val);
