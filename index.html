@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro | إصدار بدون سجل</title>
+    <title>سباق الهجن Pro | 850x Edition</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; }
@@ -43,8 +43,13 @@
         .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 12px; }
         .input-row { display: flex; gap: 10px; }
         .input-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .input-group label { font-size: 12px; color: #888; }
+        .input-group label { font-size: 12px; color: #888; margin-right: 5px; }
         .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; }
+
+        /* ستايل زر الـ ON/OFF */
+        .toggle-container { display: flex; justify-content: space-between; align-items: center; }
+        .toggle-btn { padding: 4px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #888; font-size: 11px; cursor: pointer; font-weight: 900; transition: 0.3s; }
+        .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
         button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
@@ -85,12 +90,15 @@
         <div class="controls">
             <div class="input-row">
                 <div class="input-group">
-                    <label>الرهان</label>
+                    <label>مبلغ الرهان</label>
                     <input type="number" id="bet-amount" class="field-small" value="10">
                 </div>
                 <div class="input-group">
-                    <label>سحب تلقائي (X)</label>
-                    <input type="number" id="auto-cashout" class="field-small" value="2.00" step="0.01">
+                    <div class="toggle-container">
+                        <label>سحب تلقائي</label>
+                        <button id="auto-toggle" class="toggle-btn active" onclick="toggleAuto()">ON</button>
+                    </div>
+                    <input type="number" id="auto-cashout" class="field-small" value="2.00" step="0.1">
                 </div>
             </div>
             <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
@@ -103,7 +111,15 @@
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
     let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0, roundActive = false;
-    const CYCLE = 20, WAIT = 5;
+    let autoEnabled = true; // حالة السحب التلقائي
+    const CYCLE = 20, WAIT = 5, MAX_LIMIT = 850.00;
+
+    function toggleAuto() {
+        autoEnabled = !autoEnabled;
+        const btn = document.getElementById('auto-toggle');
+        btn.innerText = autoEnabled ? "ON" : "OFF";
+        btn.classList.toggle('active', autoEnabled);
+    }
 
     function switchAuth(mode) {
         document.getElementById('login-tab').classList.toggle('active', mode === 'login');
@@ -140,13 +156,23 @@
                 renderWait(Math.ceil(WAIT - pos));
                 roundActive = true; window.isLogged = false;
             } else {
-                const elapsed = pos - WAIT, mult = Math.pow(1.15, elapsed);
-                if (mult >= crashAt) {
-                    if (roundActive) renderCrash(crashAt);
-                    if (!window.isLogged) { window.isLogged = true; saveRound(crashAt); }
+                const elapsed = pos - WAIT;
+                let mult = Math.pow(1.15, elapsed);
+
+                // تطبيق سقف الـ 850x
+                if (mult >= MAX_LIMIT) {
+                    mult = MAX_LIMIT;
+                    if(userInRace && !cashed) doCashout(MAX_LIMIT);
+                }
+
+                if (mult >= crashAt || mult >= 850.01) {
+                    const final = Math.min(crashAt, 850.01);
+                    if (roundActive) renderCrash(final);
+                    if (!window.isLogged) { window.isLogged = true; saveRound(final); }
                 } else if (roundActive) {
                     renderRace(mult, elapsed);
-                    checkAutoCashout(mult);
+                    // السحب التلقائي يعمل فقط إذا كان الزر ON
+                    if (autoEnabled) checkAutoCashout(mult);
                     if (betPlaced && !userInRace) joinRace();
                 }
             }
@@ -154,8 +180,11 @@
     }
 
     function getCrash(id) {
-        let r = Math.abs(Math.sin(id * 456.789) * 10000) % 1;
-        let res = 0.98 / (1 - r * 0.98);
+        // معادلة جديدة لكسر النمط القديم وتجاوز الـ 8
+        let seed = id * 824.159 + 0.33; 
+        let r = Math.abs(Math.sin(seed) * 10000) % 1;
+        if (r < 0.03) return 1.00; // نسبة خسارة فورية 3%
+        let res = 0.98 / (1 - r);
         return res > 850 ? 850.01 : parseFloat(res.toFixed(2));
     }
 
