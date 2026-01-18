@@ -18,8 +18,11 @@
         .tab-btn.active { background: var(--accent); color: #000; }
         .input-field { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #333; background: #12191f; color: white; margin-bottom: 15px; font-size: 16px; text-align: center; outline: none; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: relative; }
+        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; transition: transform 0.2s; }
+        
+        /* انيميشن زيادة النقود */
+        .money-float { position: absolute; right: 10px; top: -20px; color: var(--accent); font-weight: bold; animation: floatUp 1.2s ease-out forwards; pointer-events: none; z-index: 100; }
 
         #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; }
         .multiplier { font-size: 80px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
@@ -52,9 +55,12 @@
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
 
         .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 5px; flex-direction: row-reverse; scrollbar-width: none; border-top: 1px solid #333; }
-        .history-item { min-width: 60px; padding: 6px; border-radius: 8px; background: #12191f; color: var(--accent); font-size: 12px; font-weight: bold; text-align: center; }
+        .history-item { min-width: 60px; padding: 6px; border-radius: 8px; background: #12191f; font-size: 12px; font-weight: bold; text-align: center; }
+        .hist-low { color: var(--error); border: 1px solid rgba(255, 75, 75, 0.3); }
+        .hist-high { color: var(--accent); border: 1px solid rgba(0, 255, 136, 0.3); }
 
         @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -72,7 +78,7 @@
     </div>
 
     <div id="game-screen">
-        <div class="header">
+        <div class="header" id="header-area">
             <div class="player-info" onclick="logout()">
                 <span id="player-display" style="font-weight: bold; color: var(--accent);">جاري التحميل...</span>
                 <small style="opacity: 0.5; font-size: 10px; display: block;">تبديل الحساب</small>
@@ -136,9 +142,8 @@
         if (userInRace) return;
         autoOn = !autoOn;
         const container = document.getElementById('auto-toggle');
-        const input = document.getElementById('auto-val');
         container.classList.toggle('on', autoOn);
-        input.classList.toggle('auto-active', autoOn);
+        document.getElementById('auto-val').classList.toggle('auto-active', autoOn);
         if (autoOn && currentGameState === "waiting") betPlaced = true;
     }
 
@@ -158,7 +163,6 @@
                 } else {
                     currentGameState = "racing";
                     renderRace(mult, elapsed);
-                    // فحص السحب التلقائي
                     if (userInRace && !cashed && autoOn) {
                         if (mult >= parseFloat(document.getElementById('auto-val').value)) doCashout(mult, "AUTO");
                     }
@@ -200,18 +204,32 @@
     function doCashout(m, type = "MANUAL") {
         if (cashed || !userInRace) return;
         cashed = true; 
-        user.balance += (currentBet * m);
-        updateUI(); saveBalance(); 
+        const winAmount = (currentBet * m);
+        user.balance += winAmount;
+        
+        showWinAnimation(winAmount); // استدعاء انيميشن النقود
+        updateUI(); 
+        saveBalance(); 
         updateBtn(type === "AUTO" ? "سحب تلقائي ✅" : "سحب يدوي ✅", "btn-waiting");
+    }
+
+    function showWinAnimation(amount) {
+        const header = document.getElementById('header-area');
+        const float = document.createElement('div');
+        float.className = 'money-float';
+        float.innerText = `+${amount.toFixed(2)} 💰`;
+        header.appendChild(float);
+        
+        const balBox = document.getElementById('bal-box');
+        balBox.style.transform = 'scale(1.1)';
+        setTimeout(() => { balBox.style.transform = 'scale(1)'; float.remove(); }, 1200);
     }
 
     function handleAction() {
         if (!user) return;
-        // مسموح بالسحب اليدوي حتى لو كان التلقائي ON أثناء السباق
         if (currentGameState === "racing" && userInRace && !cashed) {
             doCashout(parseFloat(document.getElementById('mult-display').innerText), "MANUAL");
         } 
-        // وضع الرهان اليدوي مسموح فقط إذا كان التلقائي OFF
         else if (currentGameState === "waiting" && !autoOn) {
             betPlaced = !betPlaced;
         }
@@ -225,7 +243,6 @@
         } else {
             autoOn = false;
             document.getElementById('auto-toggle').classList.remove('on');
-            document.getElementById('auto-val').classList.remove('auto-active');
             alert("رصيدك غير كافٍ");
         }
     }
@@ -244,7 +261,13 @@
 
     async function syncHistory() {
         const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(8);
-        if (data) document.getElementById('history-list').innerHTML = data.map(r => `<div class="history-item">${r.crash_point.toFixed(2)}x</div>`).join('');
+        if (data) {
+            document.getElementById('history-list').innerHTML = data.map(r => {
+                // تلوين الأرقام: أقل من 2 أحمر، غير ذلك أخضر
+                const colorClass = r.crash_point < 2 ? 'hist-low' : 'hist-high';
+                return `<div class="history-item ${colorClass}">${r.crash_point.toFixed(2)}x</div>`;
+            }).join('');
+        }
     }
 
     function updateUI() { if (user) { document.getElementById('balance').innerText = user.balance.toFixed(2); document.getElementById('player-display').innerText = user.username; } }
