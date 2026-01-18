@@ -34,14 +34,8 @@
         .extra-tabs { display: flex; gap: 5px; margin-top: 15px; background: #0d1117; padding: 5px; border-radius: 12px; }
         .tab-small { flex: 1; padding: 8px; font-size: 12px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; }
         .tab-small.active { background: #1c262d; color: var(--accent); font-weight: bold; }
-        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 10px; height: 200px; overflow-y: auto; margin-top: 5px; }
+        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 200px; overflow-y: auto; margin-top: 5px; }
         .panel.active { display: block; }
-
-        /* Chat Styles */
-        .chat-msg { font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid #1c262d; padding-bottom: 4px; }
-        .chat-user { color: var(--accent); font-weight: bold; }
-        .chat-input-area { display: flex; gap: 5px; margin-top: 5px; }
-        .chat-input { flex: 1; background: var(--input); border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; font-size: 12px; }
 
         /* Leaderboard Styles */
         .lb-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #1c262d; font-size: 13px; }
@@ -76,11 +70,11 @@
     <div id="auth-overlay">
         <h2 style="color: var(--accent); text-align: center;">سباق الهجن 🐪</h2>
         <div class="auth-tabs" style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')" style="flex:1; padding:10px;">دخول</button>
-            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')" style="flex:1; padding:10px;">تسجيل</button>
+            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')" style="flex:1; padding:10px; cursor:pointer;">دخول</button>
+            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')" style="flex:1; padding:10px; cursor:pointer;">تسجيل</button>
         </div>
-        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
-        <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background: #12191f; color: white; text-align: center;">
+        <input type="password" id="password" class="input-field" placeholder="كلمة المرور" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background: #12191f; color: white; text-align: center;">
         <button class="main-btn btn-bet" onclick="processAuth()">ابدأ الآن</button>
     </div>
 
@@ -88,6 +82,7 @@
         <div class="header">
             <div onclick="logout()" style="cursor: pointer;">
                 <span id="player-display" style="font-weight: bold; color: var(--accent);">جاري التحميل...</span>
+                <div style="font-size: 9px; opacity: 0.6; text-align: center;">خروج</div>
             </div>
             <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
         </div>
@@ -111,7 +106,7 @@
                 </div>
                 <div class="input-group">
                     <label style="font-size:10px">هدف تلقائي</label>
-                    <input type="number" id="auto-val" class="field-small" value="2.00">
+                    <input type="number" id="auto-val" class="field-small" value="2.00" step="0.1">
                 </div>
                 <div id="auto-toggle" class="toggle-container" onclick="toggleAuto()">
                     <span style="font-size:10px">تلقائي</span>
@@ -122,21 +117,12 @@
         </div>
 
         <div class="extra-tabs">
-            <button class="tab-small active" onclick="showPanel('history')">السجل</button>
-            <button class="tab-small" onclick="showPanel('chat')">الدردشة</button>
-            <button class="tab-small" onclick="showPanel('leaderboard')">المتصدرون</button>
+            <button class="tab-small active" onclick="showPanel('history')">سجل النتائج</button>
+            <button class="tab-small" onclick="showPanel('leaderboard')">قائمة المتصدرين</button>
         </div>
 
         <div id="history" class="panel active">
-            <div id="history-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
-        </div>
-
-        <div id="chat" class="panel">
-            <div id="chat-msgs" style="height:140px; overflow-y:auto; margin-bottom:5px;"></div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" class="chat-input" placeholder="اكتب رسالة...">
-                <button onclick="sendMsg()" style="padding:5px 10px; background:var(--accent); border:none; border-radius:5px; font-weight:bold;">إرسال</button>
-            </div>
+            <div id="history-list" style="display:flex; flex-wrap:wrap; gap:5px; justify-content: center;"></div>
         </div>
 
         <div id="leaderboard" class="panel">
@@ -172,7 +158,6 @@
         updateUI();
         syncHistory();
         syncLeaderboard();
-        listenChat();
     }
 
     function globalEngine() {
@@ -261,6 +246,7 @@
             await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
         } else {
             autoOn = false; alert("الرصيد غير كافٍ");
+            document.getElementById('auto-toggle').classList.remove('on');
         }
     }
 
@@ -277,7 +263,6 @@
         }
     }
 
-    // Panels System
     function showPanel(id) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-small').forEach(t => t.classList.remove('active'));
@@ -285,7 +270,6 @@
         event.target.classList.add('active');
     }
 
-    // Leaderboard
     async function syncLeaderboard() {
         const { data } = await supabaseClient.from('Profiles').select('username, balance').order('balance', { ascending: false }).limit(5);
         if (data) {
@@ -298,23 +282,6 @@
         }
     }
 
-    // Chat System
-    async function sendMsg() {
-        const inp = document.getElementById('chat-input');
-        if (!inp.value.trim() || !user) return;
-        await supabaseClient.from('Messages').insert([{ user_id: user.id, username: user.username, text: inp.value }]);
-        inp.value = '';
-    }
-
-    function listenChat() {
-        supabaseClient.channel('chat').on('postgres_changes', { event: 'INSERT', table: 'Messages' }, payload => {
-            const div = document.getElementById('chat-msgs');
-            div.innerHTML += `<div class="chat-msg"><span class="chat-user">${payload.new.username}:</span> ${payload.new.text}</div>`;
-            div.scrollTop = div.scrollHeight;
-        }).subscribe();
-    }
-
-    // Helpers
     function updateUI() {
         if (user) {
             document.getElementById('balance').innerText = user.balance.toFixed(2);
@@ -336,10 +303,10 @@
     }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(20);
         if (data) {
             document.getElementById('history-list').innerHTML = data.map(r => `
-                <div style="padding:4px 8px; border-radius:5px; font-size:10px; background:#12191f; color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
+                <div style="padding:4px 8px; border-radius:5px; font-size:10px; background:#12191f; border:1px solid #333; color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
                     ${r.crash_point.toFixed(2)}x
                 </div>
             `).join('');
@@ -355,14 +322,16 @@
         const p = document.getElementById('password').value;
         const mode = window.authMode || 'login';
         
+        if (!u || !p) return alert("يرجى إدخال البيانات");
+
         if (mode === 'signup') {
             const { data, error } = await supabaseClient.auth.signUp({ email: `${u}@game.com`, password: p });
-            if (error) return alert(error.message);
-            // Profiles trigger should handle profile creation
-            setTimeout(() => location.reload(), 1000);
+            if (error) return alert("خطأ: " + error.message);
+            alert("تم إنشاء الحساب، يرجى تسجيل الدخول");
+            switchAuth('login');
         } else {
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@game.com`, password: p });
-            if (error) return alert(error.message);
+            if (error) return alert("فشل الدخول: " + error.message);
             const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
             if (profile) launch(profile);
         }
