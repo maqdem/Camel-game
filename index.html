@@ -192,3 +192,193 @@
 
     async function logGameResult(rid, cp) {
         if (lastRoundLogged === rid) return;
+        lastRoundLogged = rid;
+        await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]);
+    }
+
+    function renderWait(s) {
+        document.getElementById('main-timer').style.display = 'block';
+        document.getElementById('main-timer').innerText = s;
+        document.getElementById('mult-display').style.display = 'none';
+        document.getElementById('auto-toggle').classList.remove('disabled');
+        let btnText = betPlaced ? "تم تجهيز الرهان..." : "وضع رهان";
+        if (autoOn) btnText = "رهان تلقائي فعال..";
+        updateBtn(btnText, betPlaced ? "btn-waiting" : "btn-bet");
+    }
+
+    function renderRace(m, e) {
+        document.getElementById('main-timer').style.display = 'none';
+        const d = document.getElementById('mult-display');
+        d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
+        document.getElementById('camel-wrap').style.left = Math.min(e * 4, 75) + "%";
+        document.getElementById('auto-toggle').classList.add('disabled');
+        if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
+    }
+
+    function renderCrash(cp) {
+        const d = document.getElementById('mult-display');
+        d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
+        document.getElementById('boom-fx').style.left = document.getElementById('camel-wrap').style.left;
+        document.getElementById('boom-fx').style.display = "block";
+        document.getElementById('camel-wrap').style.opacity = "0";
+        updateBtn("انفجر الجمل!", "btn-waiting");
+        userInRace = false; betPlaced = false; 
+    }
+
+    async function doCashout(m, type = "MANUAL") {
+        if (cashed || !userInRace) return;
+        cashed = true; 
+        const winAmount = (currentBet * m);
+        user.balance += winAmount;
+        
+        showWinAnimation(winAmount);
+        updateUI(); 
+        await saveBalance(); 
+        updateBtn(type === "AUTO" ? "سحب تلقائي ✅" : "سحب يدوي ✅", "btn-waiting");
+    }
+
+    function showWinAnimation(amount) {
+        const header = document.getElementById('header-area');
+        const float = document.createElement('div');
+        float.className = 'money-float';
+        float.innerText = `+${amount.toFixed(2)} 💰`;
+        header.appendChild(float);
+        
+        const balBox = document.getElementById('bal-box');
+        balBox.style.transform = 'scale(1.1)';
+        setTimeout(() => { balBox.style.transform = 'scale(1)'; float.remove(); }, 1200);
+    }
+
+    function handleAction() {
+        if (!user) return;
+        if (currentGameState === "racing" && userInRace && !cashed) {
+            doCashout(parseFloat(document.getElementById('mult-display').innerText), "MANUAL");
+        } 
+        else if (currentGameState === "waiting" && !autoOn) {
+            betPlaced = !betPlaced;
+        }
+    }
+
+    async function joinRace() {
+        currentBet = parseFloat(document.getElementById('bet-amount').value);
+        if (user.balance >= currentBet) {
+            userInRace = true; cashed = false; betPlaced = false;
+            user.balance -= currentBet; 
+            updateUI(); 
+            await saveBalance();
+        } else {
+            autoOn = false;
+            document.getElementById('auto-toggle').classList.remove('on');
+            alert("رصيدك غير كافٍ");
+        }
+    }
+
+    function getCrash(id) {
+        let r = Math.abs(Math.sin(id * 789.123) * 10000) % 1;
+        return Math.max(1.01, Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 500));
+    }
+
+    function resetVisuals() {
+        document.getElementById('camel-wrap').style.left = "0%";
+        document.getElementById('camel-wrap').style.opacity = "1";
+        document.getElementById('boom-fx').style.display = "none";
+        document.getElementById('mult-display').style.color = "var(--accent)";
+    }
+
+    async function syncHistory() {
+        const { data } = await supabaseClient
+            .from('GameHistory')
+            .select('crash_point')
+            .order('created_at', { ascending: false })
+            .limit(10);
+        if (data) {
+            document.getElementById('history-list').innerHTML = data.map(r => {
+                const colorClass = r.crash_point < 2 ? 'hist-low' : 'hist-high';
+                return `<div class="history-item ${colorClass}">${r.crash_point.toFixed(2)}x</div>`;
+            }).join('');
+        }
+    }
+
+    function updateUI() { 
+        if (user) { 
+            document.getElementById('balance').innerText = user.balance.toFixed(2); 
+            document.getElementById('player-display').innerText = user.username; 
+        } 
+    }
+
+    function updateBtn(t, c, s="") { 
+        const b = document.getElementById('action-btn'); 
+        b.className = `main-btn ${c}`; 
+        b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; 
+    }
+
+    async function saveBalance() { 
+        if (user) {
+            await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); 
+        }
+    }
+
+    function logout() { 
+        if(confirm("هل تريد تسجيل الخروج؟")) { 
+            localStorage.removeItem('camel_session'); 
+            location.reload(); 
+        } 
+    }
+
+    function switchAuth(m) { 
+        window.authMode = m; 
+        document.getElementById('login-tab').classList.toggle('active', m==='login'); 
+        document.getElementById('signup-tab').classList.toggle('active', m==='signup'); 
+    }
+
+    async function processAuth() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        const btn = document.getElementById('auth-submit-btn');
+
+        if (!u || !p) { alert("يرجى ملء البيانات"); return; }
+        
+        btn.innerText = "جاري المعالجة...";
+        btn.disabled = true;
+
+        const { data, error } = await supabaseClient.auth[window.authMode === 'signup' ? 'signUp' : 'signInWithPassword']({ 
+            email: `${u}@game.com`, 
+            password: p 
+        });
+
+        if (error) {
+            alert("خطأ: " + error.message);
+            btn.innerText = "ابدأ الآن";
+            btn.disabled = false;
+        } else {
+            // انتظار ثانيتين (2000ms) لضمان انتهاء الـ Trigger من إنشاء البروفايل
+            if (window.authMode === 'signup') await new Promise(r => setTimeout(r, 2000));
+
+            const { data: profile, error: pErr } = await supabaseClient
+                .from('Profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profile) {
+                launch(profile);
+            } else {
+                // محاولة أخيرة في حال تأخر قاعدة البيانات
+                await new Promise(r => setTimeout(r, 1000));
+                const { data: retryProfile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
+                if (retryProfile) launch(retryProfile);
+                else {
+                    alert("تم الدخول ولكن تعذر جلب الملف الشخصي. يرجى إعادة تحديث الصفحة.");
+                    btn.innerText = "ابدأ الآن";
+                    btn.disabled = false;
+                }
+            }
+        }
+    }
+
+    window.authMode = 'login';
+    globalEngine(); 
+    checkSavedSession();
+</script>
+</body>
+</html>
