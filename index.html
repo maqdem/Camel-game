@@ -12,79 +12,85 @@
         
         .app-container { width: 100%; max-width: 420px; background: var(--card); padding: 25px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
         
-        .shake { animation: shakeAnim 0.4s ease-in-out; }
-        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
-
-        .auth-container h2 { color: var(--accent); margin-bottom: 20px; text-align: center; }
-        .input-field { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #333; background: #12191f; color: white; margin-bottom: 15px; font-size: 16px; text-align: center; outline: none; }
-        .input-field:focus { border-color: var(--accent); }
+        #auth-overlay { position: absolute; inset: 0; background: rgba(11, 20, 26, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 30px; transition: 0.5s; }
         .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 10px; background: #2d333b; border-radius: 8px; cursor: pointer; border: none; color: white; font-weight: bold; }
+        .tab-btn { flex: 1; padding: 12px; background: #2d333b; border-radius: 10px; cursor: pointer; border: none; color: white; font-weight: bold; }
         .tab-btn.active { background: var(--accent); color: #000; }
+        .input-field { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid #333; background: #12191f; color: white; margin-bottom: 15px; font-size: 16px; text-align: center; outline: none; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; transition: 0.3s; }
-        .win-glow { box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: relative; }
+        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; transition: transform 0.2s; }
+        
+        .money-float { position: absolute; right: 10px; top: -20px; color: var(--accent); font-weight: bold; animation: floatUp 1.2s ease-out forwards; pointer-events: none; z-index: 100; }
 
-        #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; text-shadow: 0 0 20px rgba(255,204,0,0.3); }
+        #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; }
         .multiplier { font-size: 80px; font-weight: 900; color: var(--accent); display: none; text-align: center; }
         
-        .track { 
-            height: 140px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0;
-            background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%);
-            background-size: 60px 100%;
-        }
-        
-        .camel-wrapper { position: absolute; bottom: 15px; left: 0; transition: left 0.4s ease-out; z-index: 5; display: flex; align-items: center; }
+        .track { height: 140px; background: #12191f; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 15px 0; background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%; }
+        .camel-wrapper { position: absolute; bottom: 15px; left: 0; transition: left 0.4s ease-out; z-index: 5; }
         .camel { font-size: 55px; transform: scaleX(-1); }
-        .dust { position: absolute; bottom: 5px; left: -10px; width: 20px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(5px); display: none; }
-
         .explosion { position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
-        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
 
         .controls { background: #0d1117; padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 12px; }
-        .input-row { display: flex; gap: 10px; }
+        .input-row { display: flex; gap: 10px; align-items: flex-end; }
         .input-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .input-group label { font-size: 12px; color: #888; }
-        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; }
+        .input-group label { font-size: 11px; color: #888; margin-right: 5px; }
+        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: #12191f; color: white; text-align: center; font-weight: bold; outline: none; transition: 0.3s; }
+        .auto-active { border-color: var(--accent); background: rgba(0, 255, 136, 0.05); }
 
-        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 12px; cursor: pointer; border: 1px solid #333; transition: 0.3s; min-width: 85px; justify-content: space-between; position: relative; }
+        .toggle-container.on { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
+        .toggle-container.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        .toggle-label { font-size: 10px; font-weight: 900; color: #666; transition: 0.3s; }
+        .toggle-container.on .toggle-label { color: var(--accent); }
+        .switch { width: 34px; height: 18px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
+        .toggle-container.on .switch { background: var(--accent); }
+        .dot { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; transition: 0.3s; }
+        .toggle-container.on .dot { right: 18px; }
+
+        button.main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #555; pointer-events: none; }
 
-        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; flex-direction: row-reverse; scrollbar-width: none; min-height: 45px; }
-        .history-item { min-width: 65px; padding: 8px; border-radius: 10px; background: #12191f; color: var(--accent); border: 1px solid rgba(0,255,136,0.2); font-size: 13px; font-weight: bold; text-align: center; }
-        .hist-crash { color: var(--error); border-color: rgba(255,75,75,0.2); }
+        .history-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 5px; flex-direction: row-reverse; scrollbar-width: none; border-top: 1px solid #333; }
+        .history-item { min-width: 60px; padding: 6px; border-radius: 8px; background: #12191f; font-size: 12px; font-weight: bold; text-align: center; }
+        .hist-low { color: var(--error); border: 1px solid rgba(255, 75, 75, 0.3); }
+        .hist-high { color: var(--accent); border: 1px solid rgba(0, 255, 136, 0.3); }
+
+        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
     </style>
 </head>
 <body>
 
 <div class="app-container" id="app">
-    <div id="auth-screen" class="auth-container">
-        <h2>سباق الهجن العالمي 🐪</h2>
+    <div id="auth-overlay">
+        <h2 style="color: var(--accent); text-align: center;">سباق الهجن 🐪</h2>
         <div class="auth-tabs">
-            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')">تسجيل دخول</button>
-            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')">تسجيل جديد</button>
+            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')">دخول</button>
+            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')">تسجيل</button>
         </div>
         <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
         <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-        <button class="main-btn btn-bet" id="auth-submit" onclick="processAuth()">ابدأ اللعب الآن</button>
+        <button class="main-btn btn-bet" id="auth-submit-btn" onclick="processAuth()">ابدأ الآن</button>
     </div>
 
-    <div id="game-screen" style="display:none;">
-        <div class="header">
-            <span id="player-display" style="opacity: 0.7;">---</span>
+    <div id="game-screen">
+        <div class="header" id="header-area">
+            <div class="player-info" onclick="logout()" style="cursor: pointer;">
+                <span id="player-display" style="font-weight: bold; color: var(--accent);">جاري التحميل...</span>
+                <small style="opacity: 0.5; font-size: 10px; display: block;">تسجيل خروج</small>
+            </div>
             <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
         </div>
-
+        
         <div id="main-timer">5</div>
         <div id="mult-display" class="multiplier">1.00x</div>
         
-        <div class="track" id="track-box">
+        <div class="track">
             <div id="camel-wrap" class="camel-wrapper">
                 <div class="camel">🐪</div>
-                <div id="dust-fx" class="dust"></div>
             </div>
             <div id="boom-fx" class="explosion"></div>
         </div>
@@ -93,209 +99,285 @@
             <div class="input-row">
                 <div class="input-group">
                     <label>الرهان</label>
-                    <input type="number" id="bet-amount" class="field-small" value="10" min="1">
+                    <input type="number" id="bet-amount" class="field-small" value="5" min="1">
                 </div>
                 <div class="input-group">
-                    <label>سحب تلقائي (X)</label>
-                    <input type="number" id="auto-cashout" class="field-small" value="2.00" min="1.01" step="0.01">
+                    <label>الهدف (X)</label>
+                    <input type="number" id="auto-val" class="field-small" value="2.00" min="1.01" step="0.1">
+                </div>
+                <div id="auto-toggle" class="toggle-container" onclick="toggleAuto()">
+                    <span class="toggle-label">تلقائي</span>
+                    <div class="switch"><div class="dot"></div></div>
                 </div>
             </div>
             <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
         </div>
-
         <div id="history-list" class="history-list"></div>
     </div>
 </div>
 
 <script>
-    // تم إدراج الروابط الخاصة بك هنا
+    // تم إدراج الروابط الخاصة بك هنا بنجاح
     const CONF = { 
         URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', 
         KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' 
     };
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
-    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, bgPos = 0, roundActive = false;
-    const CYCLE = 20, WAIT = 5;
+    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, autoOn = false;
+    let currentGameState = "waiting"; const CYCLE = 15, WAIT = 5;
+    let lastRoundLogged = -1;
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playSound(freq, type, duration) {
-        try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-            osc.stop(audioCtx.currentTime + duration);
-        } catch(e){}
-    }
-
-    function switchAuth(mode) {
-        document.getElementById('login-tab').classList.toggle('active', mode === 'login');
-        document.getElementById('signup-tab').classList.toggle('active', mode === 'signup');
-        document.getElementById('auth-submit').innerText = mode === 'login' ? 'دخول' : 'إنشاء حساب';
-        window.authMode = mode;
-    }
-
-    async function processAuth() {
-        const u = document.getElementById('username').value, p = document.getElementById('password').value;
-        if (u.length < 3) return alert("الاسم قصير!");
-        if (window.authMode === 'signup') {
-            const { data: n } = await supabaseClient.from('Profiles').insert([{ username: u, password: p, balance: 100.00 }]).select().single();
-            if (n) launch(n);
-        } else {
-            const { data } = await supabaseClient.from('Profiles').select('*').eq('username', u).eq('password', p).maybeSingle();
-            if (data) launch(data); else alert("خطأ في البيانات");
+    async function checkSavedSession() {
+        const saved = localStorage.getItem('camel_session');
+        if (saved) {
+            try {
+                const userId = JSON.parse(saved).id;
+                const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', userId).single();
+                if (profile) launch(profile);
+                else localStorage.removeItem('camel_session');
+            } catch(e) { localStorage.removeItem('camel_session'); }
         }
     }
 
-    function launch(profile) {
-        user = profile;
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
-        updateUI(); syncHistory(); startEngine();
+    function launch(p) {
+        user = p; 
+        localStorage.setItem('camel_session', JSON.stringify({ id: p.id }));
+        document.getElementById('auth-overlay').style.display = 'none';
+        updateUI();
+        syncHistory();
     }
 
-    function startEngine() {
+    function toggleAuto() {
+        if (userInRace) return;
+        autoOn = !autoOn;
+        const container = document.getElementById('auto-toggle');
+        container.classList.toggle('on', autoOn);
+        document.getElementById('auto-val').classList.toggle('auto-active', autoOn);
+        if (autoOn && currentGameState === "waiting") betPlaced = true;
+    }
+
+    function globalEngine() {
         setInterval(() => {
             const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
             const crashAt = getCrash(roundId);
 
             if (pos < WAIT) {
+                if (currentGameState !== "waiting") { 
+                    currentGameState = "waiting"; 
+                    resetVisuals(); 
+                    syncHistory(); 
+                }
+                if (autoOn) betPlaced = true; 
                 renderWait(Math.ceil(WAIT - pos));
-                roundActive = true; 
-                window.isLogged = false; 
-                if (window.needsSync) { syncHistory(); window.needsSync = false; }
             } else {
-                const elapsed = pos - WAIT, mult = Math.pow(1.15, elapsed);
-                
+                const elapsed = pos - WAIT, mult = Math.pow(1.12, elapsed);
                 if (mult >= crashAt) {
-                    if (roundActive) renderCrash(crashAt);
-                    if (!window.isLogged) { 
-                        window.isLogged = true; 
-                        saveRound(crashAt.toFixed(2));
-                        window.needsSync = true; 
+                    if (currentGameState !== "crashed") { 
+                        currentGameState = "crashed"; 
+                        renderCrash(crashAt); 
+                        logGameResult(roundId, crashAt);
                     }
-                } else if (roundActive) {
+                } else {
+                    currentGameState = "racing";
                     renderRace(mult, elapsed);
-                    checkAutoCashout(mult);
-                    if (betPlaced && !userInRace) joinRace();
+                    if (userInRace && !cashed && autoOn) {
+                        const target = parseFloat(document.getElementById('auto-val').value);
+                        if (mult >= target) doCashout(target, "AUTO");
+                    }
+                    if (user && betPlaced && !userInRace) joinRace();
                 }
             }
         }, 50);
     }
 
-    function getCrash(id) {
-        let r = Math.abs(Math.sin(id * 456.789) * 10000) % 1;
-        return Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 450);
+    async function logGameResult(rid, cp) {
+        if (lastRoundLogged === rid) return;
+        lastRoundLogged = rid;
+        await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]);
     }
 
     function renderWait(s) {
-        const timer = document.getElementById('main-timer');
-        timer.style.display = 'block'; timer.innerText = s;
+        document.getElementById('main-timer').style.display = 'block';
+        document.getElementById('main-timer').innerText = s;
         document.getElementById('mult-display').style.display = 'none';
-        document.getElementById('mult-display').style.color = "var(--accent)";
-        document.getElementById('camel-wrap').style.left = "0%";
-        document.getElementById('dust-fx').style.display = "none";
-        document.getElementById('boom-fx').style.display = "none";
-        document.getElementById('camel-wrap').style.opacity = "1";
-        updateBtn(betPlaced ? "تم التجهيز..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
+        document.getElementById('auto-toggle').classList.remove('disabled');
+        let btnText = betPlaced ? "تم تجهيز الرهان..." : "وضع رهان";
+        if (autoOn) btnText = "رهان تلقائي فعال..";
+        updateBtn(btnText, betPlaced ? "btn-waiting" : "btn-bet");
     }
 
     function renderRace(m, e) {
         document.getElementById('main-timer').style.display = 'none';
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
-        
-        const camelPos = Math.min(e * 3, 65);
-        document.getElementById('camel-wrap').style.left = camelPos + "%";
-        
-        document.getElementById('dust-fx').style.display = "block";
-        bgPos -= (1.5 + m * 0.5); 
-        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
+        document.getElementById('camel-wrap').style.left = Math.min(e * 4, 75) + "%";
+        document.getElementById('auto-toggle').classList.add('disabled');
         if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
     }
 
-    function checkAutoCashout(m) {
-        if (userInRace && !cashed) {
-            const autoLimit = parseFloat(document.getElementById('auto-cashout').value);
-            if (m >= autoLimit) doCashout(autoLimit);
-        }
+    function renderCrash(cp) {
+        const d = document.getElementById('mult-display');
+        d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
+        document.getElementById('boom-fx').style.left = document.getElementById('camel-wrap').style.left;
+        document.getElementById('boom-fx').style.display = "block";
+        document.getElementById('camel-wrap').style.opacity = "0";
+        updateBtn("انفجر الجمل!", "btn-waiting");
+        userInRace = false; betPlaced = false; 
     }
 
-    function renderCrash(cp) {
-        roundActive = false;
-        const d = document.getElementById('mult-display'); 
-        d.innerText = cp.toFixed(2) + "x"; d.style.color = "var(--error)";
-        if (document.getElementById('camel-wrap').style.opacity !== "0") {
-            playSound(100, 'sawtooth', 0.4);
-            document.getElementById('app').classList.add('shake');
-            setTimeout(() => document.getElementById('app').classList.remove('shake'), 400);
-            const boom = document.getElementById('boom-fx');
-            boom.style.left = document.getElementById('camel-wrap').style.left;
-            boom.style.display = "block";
-            document.getElementById('camel-wrap').style.opacity = "0";
-        }
-        updateBtn("انفجر الجمل!", "btn-waiting");
-        userInRace = false; betPlaced = false;
+    async function doCashout(m, type = "MANUAL") {
+        if (cashed || !userInRace) return;
+        cashed = true; 
+        const winAmount = (currentBet * m);
+        user.balance += winAmount;
+        
+        showWinAnimation(winAmount);
+        updateUI(); 
+        await saveBalance(); 
+        updateBtn(type === "AUTO" ? "سحب تلقائي ✅" : "سحب يدوي ✅", "btn-waiting");
+    }
+
+    function showWinAnimation(amount) {
+        const header = document.getElementById('header-area');
+        const float = document.createElement('div');
+        float.className = 'money-float';
+        float.innerText = `+${amount.toFixed(2)} 💰`;
+        header.appendChild(float);
+        
+        const balBox = document.getElementById('bal-box');
+        balBox.style.transform = 'scale(1.1)';
+        setTimeout(() => { balBox.style.transform = 'scale(1)'; float.remove(); }, 1200);
     }
 
     function handleAction() {
-        const pos = (Date.now() / 1000) % CYCLE;
-        if (pos < WAIT) betPlaced = !betPlaced;
-        else if (userInRace && !cashed) doCashout(parseFloat(document.getElementById('mult-display').innerText));
+        if (!user) return;
+        if (currentGameState === "racing" && userInRace && !cashed) {
+            doCashout(parseFloat(document.getElementById('mult-display').innerText), "MANUAL");
+        } 
+        else if (currentGameState === "waiting" && !autoOn) {
+            betPlaced = !betPlaced;
+        }
     }
 
-    function joinRace() {
+    async function joinRace() {
         currentBet = parseFloat(document.getElementById('bet-amount').value);
         if (user.balance >= currentBet) {
             userInRace = true; cashed = false; betPlaced = false;
-            user.balance -= currentBet; updateUI(); saveBalance();
+            user.balance -= currentBet; 
+            updateUI(); 
+            await saveBalance();
+        } else {
+            autoOn = false;
+            document.getElementById('auto-toggle').classList.remove('on');
+            alert("رصيدك غير كافٍ");
         }
     }
 
-    function doCashout(m) {
-        if (cashed || !userInRace) return; cashed = true;
-        const win = currentBet * m; user.balance += win;
-        playSound(880, 'sine', 0.2);
-        document.getElementById('bal-box').classList.add('win-glow');
-        setTimeout(() => document.getElementById('bal-box').classList.remove('win-glow'), 500);
-        updateUI(); saveBalance(); updateBtn("تم السحب ✅", "btn-waiting");
+    function getCrash(id) {
+        let r = Math.abs(Math.sin(id * 789.123) * 10000) % 1;
+        return Math.max(1.01, Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 500));
     }
 
-    function updateUI() {
-        document.getElementById('balance').innerText = user.balance.toFixed(2);
-        document.getElementById('player-display').innerText = user.username;
-    }
-
-    function updateBtn(t, c, s="") {
-        const b = document.getElementById('action-btn'); b.className = `main-btn ${c}`;
-        b.innerHTML = s ? `<span>${t}</span><br><small>💰 ${s}</small>` : t;
-    }
-
-    async function saveRound(p) { 
-        await supabaseClient.from('GameHistory').insert([{ crash_point: parseFloat(p) }]); 
+    function resetVisuals() {
+        document.getElementById('camel-wrap').style.left = "0%";
+        document.getElementById('camel-wrap').style.opacity = "1";
+        document.getElementById('boom-fx').style.display = "none";
+        document.getElementById('mult-display').style.color = "var(--accent)";
     }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(10);
+        const { data } = await supabaseClient
+            .from('GameHistory')
+            .select('crash_point')
+            .order('created_at', { ascending: false })
+            .limit(10);
         if (data) {
-            const list = document.getElementById('history-list');
-            list.innerHTML = ''; 
-            data.forEach(r => {
-                const val = r.crash_point.toFixed(2);
-                const i = document.createElement('div');
-                i.className = `history-item ${val < 2 ? 'hist-crash' : ''}`;
-                i.innerText = val + 'x';
-                list.appendChild(i);
-            });
+            document.getElementById('history-list').innerHTML = data.map(r => {
+                const colorClass = r.crash_point < 2 ? 'hist-low' : 'hist-high';
+                return `<div class="history-item ${colorClass}">${r.crash_point.toFixed(2)}x</div>`;
+            }).join('');
         }
     }
 
-    async function saveBalance() { await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
+    function updateUI() { 
+        if (user) { 
+            document.getElementById('balance').innerText = user.balance.toFixed(2); 
+            document.getElementById('player-display').innerText = user.username; 
+        } 
+    }
+
+    function updateBtn(t, c, s="") { 
+        const b = document.getElementById('action-btn'); 
+        b.className = `main-btn ${c}`; 
+        b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; 
+    }
+
+    async function saveBalance() { 
+        if (user) {
+            await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); 
+        }
+    }
+
+    function logout() { 
+        if(confirm("هل تريد تسجيل الخروج؟")) { 
+            localStorage.removeItem('camel_session'); 
+            location.reload(); 
+        } 
+    }
+
+    function switchAuth(m) { 
+        window.authMode = m; 
+        document.getElementById('login-tab').classList.toggle('active', m==='login'); 
+        document.getElementById('signup-tab').classList.toggle('active', m==='signup'); 
+    }
+
+    async function processAuth() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        const btn = document.getElementById('auth-submit-btn');
+
+        if (!u || !p) { alert("يرجى ملء البيانات"); return; }
+        
+        btn.innerText = "جاري المعالجة...";
+        btn.disabled = true;
+
+        const { data, error } = await supabaseClient.auth[window.authMode === 'signup' ? 'signUp' : 'signInWithPassword']({ 
+            email: `${u}@game.com`, 
+            password: p 
+        });
+
+        if (error) {
+            alert("خطأ: " + error.message);
+            btn.innerText = "ابدأ الآن";
+            btn.disabled = false;
+        } else {
+            if (window.authMode === 'signup') await new Promise(r => setTimeout(r, 2000));
+
+            const { data: profile, error: pErr } = await supabaseClient
+                .from('Profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profile) {
+                launch(profile);
+            } else {
+                await new Promise(r => setTimeout(r, 1000));
+                const { data: retryProfile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
+                if (retryProfile) launch(retryProfile);
+                else {
+                    alert("تم الدخول ولكن تعذر جلب الملف الشخصي. يرجى إعادة تحديث الصفحة.");
+                    btn.innerText = "ابدأ الآن";
+                    btn.disabled = false;
+                }
+            }
+        }
+    }
 
     window.authMode = 'login';
+    globalEngine(); 
+    checkSavedSession();
 </script>
 </body>
 </html>
