@@ -21,7 +21,6 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: relative; }
         .balance-box { background: rgba(255, 204, 0, 0.15); padding: 10px 18px; border-radius: 14px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 18px; transition: transform 0.2s; }
         
-        /* انيميشن زيادة النقود */
         .money-float { position: absolute; right: 10px; top: -20px; color: var(--accent); font-weight: bold; animation: floatUp 1.2s ease-out forwards; pointer-events: none; z-index: 100; }
 
         #main-timer { font-size: 90px; font-weight: 900; color: var(--gold); text-align: center; }
@@ -74,14 +73,14 @@
         </div>
         <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
         <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-        <button class="main-btn btn-bet" onclick="processAuth()">ابدأ الآن</button>
+        <button class="main-btn btn-bet" id="auth-submit-btn" onclick="processAuth()">ابدأ الآن</button>
     </div>
 
     <div id="game-screen">
         <div class="header" id="header-area">
-            <div class="player-info" onclick="logout()">
+            <div class="player-info" onclick="logout()" style="cursor: pointer;">
                 <span id="player-display" style="font-weight: bold; color: var(--accent);">جاري التحميل...</span>
-                <small style="opacity: 0.5; font-size: 10px; display: block;">تبديل الحساب</small>
+                <small style="opacity: 0.5; font-size: 10px; display: block;">تسجيل خروج</small>
             </div>
             <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
         </div>
@@ -118,24 +117,32 @@
 </div>
 
 <script>
-    const CONF = { URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' };
+    const CONF = { 
+        URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', 
+        KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' 
+    };
     const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
 
     let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, autoOn = false;
     let currentGameState = "waiting"; const CYCLE = 15, WAIT = 5;
+    let lastRoundLogged = -1;
 
     async function checkSavedSession() {
         const saved = localStorage.getItem('camel_session');
         if (saved) {
-            const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', JSON.parse(saved).id).single();
+            const userId = JSON.parse(saved).id;
+            const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', userId).single();
             if (profile) launch(profile);
+            else localStorage.removeItem('camel_session');
         }
     }
 
     function launch(p) {
-        user = p; localStorage.setItem('camel_session', JSON.stringify({ id: p.id }));
+        user = p; 
+        localStorage.setItem('camel_session', JSON.stringify({ id: p.id }));
         document.getElementById('auth-overlay').style.display = 'none';
         updateUI();
+        syncHistory();
     }
 
     function toggleAuto() {
@@ -153,23 +160,39 @@
             const crashAt = getCrash(roundId);
 
             if (pos < WAIT) {
-                if (currentGameState !== "waiting") { currentGameState = "waiting"; resetVisuals(); syncHistory(); }
+                if (currentGameState !== "waiting") { 
+                    currentGameState = "waiting"; 
+                    resetVisuals(); 
+                    syncHistory(); 
+                }
                 if (autoOn) betPlaced = true; 
                 renderWait(Math.ceil(WAIT - pos));
             } else {
                 const elapsed = pos - WAIT, mult = Math.pow(1.12, elapsed);
                 if (mult >= crashAt) {
-                    if (currentGameState !== "crashed") { currentGameState = "crashed"; renderCrash(crashAt); }
+                    if (currentGameState !== "crashed") { 
+                        currentGameState = "crashed"; 
+                        renderCrash(crashAt); 
+                        logGameResult(roundId, crashAt);
+                    }
                 } else {
                     currentGameState = "racing";
                     renderRace(mult, elapsed);
                     if (userInRace && !cashed && autoOn) {
-                        if (mult >= parseFloat(document.getElementById('auto-val').value)) doCashout(mult, "AUTO");
+                        const target = parseFloat(document.getElementById('auto-val').value);
+                        if (mult >= target) doCashout(target, "AUTO");
                     }
                     if (user && betPlaced && !userInRace) joinRace();
                 }
             }
         }, 50);
+    }
+
+    async function logGameResult(rid, cp) {
+        if (lastRoundLogged === rid) return;
+        lastRoundLogged = rid;
+        // يتم إرسال النتيجة مرة واحدة فقط لكل دورة لجدول History
+        await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]);
     }
 
     function renderWait(s) {
@@ -201,15 +224,15 @@
         userInRace = false; betPlaced = false; 
     }
 
-    function doCashout(m, type = "MANUAL") {
+    async function doCashout(m, type = "MANUAL") {
         if (cashed || !userInRace) return;
         cashed = true; 
         const winAmount = (currentBet * m);
         user.balance += winAmount;
         
-        showWinAnimation(winAmount); // استدعاء انيميشن النقود
+        showWinAnimation(winAmount);
         updateUI(); 
-        saveBalance(); 
+        await saveBalance(); 
         updateBtn(type === "AUTO" ? "سحب تلقائي ✅" : "سحب يدوي ✅", "btn-waiting");
     }
 
@@ -235,11 +258,13 @@
         }
     }
 
-    function joinRace() {
+    async function joinRace() {
         currentBet = parseFloat(document.getElementById('bet-amount').value);
         if (user.balance >= currentBet) {
             userInRace = true; cashed = false; betPlaced = false;
-            user.balance -= currentBet; updateUI(); saveBalance();
+            user.balance -= currentBet; 
+            updateUI(); 
+            await saveBalance();
         } else {
             autoOn = false;
             document.getElementById('auto-toggle').classList.remove('on');
@@ -260,31 +285,92 @@
     }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(8);
+        const { data } = await supabaseClient
+            .from('GameHistory')
+            .select('crash_point')
+            .order('created_at', { ascending: false })
+            .limit(10);
         if (data) {
             document.getElementById('history-list').innerHTML = data.map(r => {
-                // تلوين الأرقام: أقل من 2 أحمر، غير ذلك أخضر
                 const colorClass = r.crash_point < 2 ? 'hist-low' : 'hist-high';
                 return `<div class="history-item ${colorClass}">${r.crash_point.toFixed(2)}x</div>`;
             }).join('');
         }
     }
 
-    function updateUI() { if (user) { document.getElementById('balance').innerText = user.balance.toFixed(2); document.getElementById('player-display').innerText = user.username; } }
-    function updateBtn(t, c, s="") { const b = document.getElementById('action-btn'); b.className = `main-btn ${c}`; b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; }
-    async function saveBalance() { if (user) await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); }
-    function logout() { if(confirm("خروج؟")) { localStorage.removeItem('camel_session'); location.reload(); } }
-    function switchAuth(m) { window.authMode = m; document.getElementById('login-tab').classList.toggle('active', m==='login'); document.getElementById('signup-tab').classList.toggle('active', m==='signup'); }
-    async function processAuth() {
-        const u = document.getElementById('username').value, p = document.getElementById('password').value;
-        const { data, error } = await supabaseClient.auth[window.authMode === 'signup' ? 'signUp' : 'signInWithPassword']({ email: `${u}@game.com`, password: p });
-        if (error) alert("خطأ في البيانات"); else {
-            const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
-            if (profile) launch(profile);
+    function updateUI() { 
+        if (user) { 
+            document.getElementById('balance').innerText = user.balance.toFixed(2); 
+            document.getElementById('player-display').innerText = user.username; 
+        } 
+    }
+
+    function updateBtn(t, c, s="") { 
+        const b = document.getElementById('action-btn'); 
+        b.className = `main-btn ${c}`; 
+        b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; 
+    }
+
+    async function saveBalance() { 
+        if (user) {
+            await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id); 
         }
     }
 
-    globalEngine(); checkSavedSession(); window.authMode = 'login';
+    function logout() { 
+        if(confirm("هل تريد تسجيل الخروج؟")) { 
+            localStorage.removeItem('camel_session'); 
+            location.reload(); 
+        } 
+    }
+
+    function switchAuth(m) { 
+        window.authMode = m; 
+        document.getElementById('login-tab').classList.toggle('active', m==='login'); 
+        document.getElementById('signup-tab').classList.toggle('active', m==='signup'); 
+    }
+
+    async function processAuth() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        const btn = document.getElementById('auth-submit-btn');
+
+        if (!u || !p) { alert("يرجى ملء البيانات"); return; }
+        
+        btn.innerText = "جاري المعالجة...";
+        btn.disabled = true;
+
+        const { data, error } = await supabaseClient.auth[window.authMode === 'signup' ? 'signUp' : 'signInWithPassword']({ 
+            email: `${u}@game.com`, 
+            password: p 
+        });
+
+        if (error) {
+            alert("خطأ: " + error.message);
+            btn.innerText = "ابدأ الآن";
+            btn.disabled = false;
+        } else {
+            // انتظار ثانية للـ Trigger في حال كان حساب جديد
+            if (window.authMode === 'signup') await new Promise(r => setTimeout(r, 1200));
+
+            const { data: profile, error: pErr } = await supabaseClient
+                .from('Profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+
+            if (profile) launch(profile);
+            else {
+                alert("تم الدخول ولكن لم نجد الملف الشخصي. جرب الدخول مرة أخرى.");
+                location.reload();
+            }
+        }
+    }
+
+    // إعدادات البداية
+    window.authMode = 'login';
+    globalEngine(); 
+    checkSavedSession();
 </script>
 </body>
 </html>
