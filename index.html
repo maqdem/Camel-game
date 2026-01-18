@@ -117,6 +117,7 @@
 </div>
 
 <script>
+    // تم إدراج الروابط الخاصة بك هنا بنجاح
     const CONF = { 
         URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', 
         KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' 
@@ -351,7 +352,6 @@
             btn.innerText = "ابدأ الآن";
             btn.disabled = false;
         } else {
-            // انتظار ثانيتين (2000ms) لضمان انتهاء الـ Trigger من إنشاء البروفايل
             if (window.authMode === 'signup') await new Promise(r => setTimeout(r, 2000));
 
             const { data: profile, error: pErr } = await supabaseClient
@@ -363,7 +363,6 @@
             if (profile) {
                 launch(profile);
             } else {
-                // محاولة أخيرة في حال تأخر قاعدة البيانات
                 await new Promise(r => setTimeout(r, 1000));
                 const { data: retryProfile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
                 if (retryProfile) launch(retryProfile);
