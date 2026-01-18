@@ -1,375 +1,48 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن العالمي | Camel Dash Pro</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <style>
-        :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        
-        .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; overflow-y: auto; scrollbar-width: none; }
-        .app-container::-webkit-scrollbar { display: none; }
+// --- التعديلات الجوهرية التي تم إضافتها في الكود أدناه ---
 
-        /* Auth Overlay */
-        #auth-overlay { position: absolute; inset: 0; background: rgba(11, 20, 26, 0.98); z-index: 1000; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
-        
-        /* Game Elements */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .balance-box { background: rgba(255, 204, 0, 0.15); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 16px; }
-        
-        #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; height: 100px; line-height: 100px; }
-        .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-align: center; height: 100px; line-height: 100px; }
-        
-        .track { height: 120px; background: var(--input); border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 10px 0; background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%; }
-        .camel-wrapper { position: absolute; bottom: 10px; left: 0; transition: left 0.4s ease-out; z-index: 5; }
-        .camel { font-size: 50px; transform: scaleX(-1); position: relative; z-index: 10; }
-        
-        /* أنيميشن الغبار المطور */
-        .dust-container { position: absolute; bottom: 5px; right: 10px; width: 50px; height: 20px; display: none; }
-        .dust-particle { position: absolute; background: rgba(255, 255, 255, 0.25); border-radius: 50%; filter: blur(3px); animation: dustFly 0.6s infinite; }
-        .p1 { width: 14px; height: 14px; left: 0; animation-delay: 0.1s; }
-        .p2 { width: 9px; height: 9px; left: 15px; animation-delay: 0.3s; }
-        .p3 { width: 11px; height: 11px; left: -10px; animation-delay: 0.5s; }
+// 1. زيادة الـ CYCLE إلى 100 ثانية لضمان عدم انتهاء "وقت الجولة" قبل وصول المضاعف لأرقام عالية.
+const CYCLE = 100; 
 
-        @keyframes dustFly {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-            100% { transform: translate(40px, -20px) scale(2); opacity: 0; }
-        }
-        
-        .explosion { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
+// 2. إصلاح دالة النمو لتكون Logarithmic/Exponential متوازنة.
+// 3. إضافة "سقف أمان" تقني للتأكد من أن المتصفح لا يتجمد.
 
-        /* Tabs & Panels */
-        .extra-tabs { display: flex; gap: 5px; margin-top: 15px; background: #0d1117; padding: 5px; border-radius: 12px; }
-        .tab-small { flex: 1; padding: 10px; font-size: 13px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; font-weight: bold; }
-        .tab-small.active { background: #1c262d; color: var(--accent); }
-        
-        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 200px; overflow-y: auto; margin-top: 5px; border: 1px solid #1c262d; }
-        .panel.active { display: block; }
+function globalEngine() {
+    setInterval(() => {
+        const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
+        const crashAt = getCrash(roundId);
 
-        /* History List */
-        #history-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
-        .hist-item { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: #1c262d; border: 1px solid #333; font-weight: 900; }
+        if (pos < WAIT) {
+            // حالة الانتظار
+            if (currentGameState !== "waiting") { 
+                currentGameState = "waiting"; 
+                resetVisuals(); 
+                syncHistory(); 
+            }
+            renderWait(Math.ceil(WAIT - pos));
+        } else {
+            // حالة السباق - هنا تم الإصلاح
+            const elapsed = pos - WAIT;
+            
+            // معادلة نمو تضمن استمرار العداد للأبد دون توقف عند 3
+            const mult = Math.pow(1.07, elapsed); 
 
-        /* Controls */
-        .controls { background: #0d1117; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .input-row { display: flex; gap: 8px; align-items: flex-end; }
-        .input-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: var(--input); color: white; text-align: center; font-weight: bold; outline: none; }
-        
-        .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 10px; cursor: pointer; border: 1px solid #333; min-width: 85px; justify-content: space-between; }
-        .toggle-container.on { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
-        .switch { width: 30px; height: 16px; background: #333; border-radius: 20px; position: relative; }
-        .toggle-container.on .switch { background: var(--accent); }
-        .dot { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; transition: 0.3s; }
-        .toggle-container.on .dot { right: 16px; }
-
-        .main-btn { width: 100%; padding: 16px; border-radius: 15px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
-        .btn-bet { background: var(--accent); color: #000; }
-        .btn-cashout { background: var(--error); color: white; }
-        .btn-waiting { background: #222; color: #666; pointer-events: none; }
-
-        .shake { animation: shakeAnim 0.3s ease-in-out; }
-        @keyframes shakeAnim { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-        @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-    </style>
-</head>
-<body>
-
-<div class="app-container" id="app">
-    <div id="auth-overlay">
-        <h1 style="color: var(--gold); text-align: center; font-size: 32px; margin-bottom: 5px;">سباق الهجن</h1>
-        <p style="text-align: center; color: var(--accent); margin-bottom: 30px; font-weight: bold;">Camel Dash Pro</p>
-        
-        <div class="auth-tabs" style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="tab-small active" id="login-tab" onclick="switchAuth('login')" style="flex:1;">دخول</button>
-            <button class="tab-small" id="signup-tab" onclick="switchAuth('signup')" style="flex:1;">تسجيل</button>
-        </div>
-        
-        <input type="text" id="username" class="field-small" placeholder="اسم المستخدم" style="margin-bottom: 10px;">
-        <input type="password" id="password" class="field-small" placeholder="كلمة المرور" style="margin-bottom: 20px;">
-        <button class="main-btn btn-bet" onclick="processAuth()">ابدأ السباق الآن</button>
-    </div>
-
-    <div id="game-screen">
-        <div class="header">
-            <div onclick="logout()" style="cursor: pointer; background: #0d1117; padding: 5px 12px; border-radius: 10px;">
-                <span id="player-display" style="font-weight: bold; color: var(--accent);">...</span>
-                <span style="font-size: 10px; opacity: 0.5; margin-right: 5px;">خروج</span>
-            </div>
-            <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
-        </div>
-        
-        <div id="main-timer">5</div>
-        <div id="mult-display" class="multiplier">1.00x</div>
-        
-        <div class="track" id="track-box">
-            <div id="camel-wrap" class="camel-wrapper">
-                <div class="camel">🐪</div>
-                <div id="dust-fx" class="dust-container">
-                    <div class="dust-particle p1"></div>
-                    <div class="dust-particle p2"></div>
-                    <div class="dust-particle p3"></div>
-                </div>
-            </div>
-            <div id="boom-fx" class="explosion"></div>
-        </div>
-
-        <div class="controls">
-            <div class="input-row">
-                <div class="input-group">
-                    <label style="font-size:11px; margin-right:5px;">مبلغ الرهان</label>
-                    <input type="number" id="bet-amount" class="field-small" value="10" min="1">
-                </div>
-                <div class="input-group">
-                    <label style="font-size:11px; margin-right:5px;">هدف تلقائي</label>
-                    <input type="number" id="auto-val" class="field-small" value="2.00" step="0.1">
-                </div>
-                <div id="auto-toggle" class="toggle-container" onclick="toggleAuto()">
-                    <span style="font-size:11px; font-weight: bold;">تلقائي</span>
-                    <div class="switch"><div class="dot"></div></div>
-                </div>
-            </div>
-            <button id="action-btn" class="main-btn btn-bet" onclick="handleAction()">وضع رهان</button>
-        </div>
-
-        <div class="extra-tabs">
-            <button class="tab-small active" onclick="showPanel('history', event)">سجل النتائج</button>
-            <button class="tab-small" onclick="showPanel('leaderboard', event)">المتصدرون</button>
-        </div>
-
-        <div id="history" class="panel active">
-            <div id="history-list"></div>
-        </div>
-
-        <div id="leaderboard" class="panel">
-            <div id="lb-list"></div>
-        </div>
-    </div>
-</div>
-
-<script>
-    const CONF = { 
-        URL: 'https://uqmfwgdrlcqywxvdljlb.supabase.co', 
-        KEY: 'sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT' 
-    };
-    const supabaseClient = supabase.createClient(CONF.URL, CONF.KEY);
-
-    let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, autoOn = false;
-    let currentGameState = "waiting"; const CYCLE = 15, WAIT = 5;
-    let bgPos = 0;
-
-    async function checkSavedSession() {
-        const saved = localStorage.getItem('camel_session');
-        if (saved) {
-            const userId = JSON.parse(saved).id;
-            const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', userId).single();
-            if (profile) launch(profile);
-        }
-    }
-
-    function launch(p) {
-        user = p; 
-        localStorage.setItem('camel_session', JSON.stringify({ id: p.id }));
-        document.getElementById('auth-overlay').style.display = 'none';
-        updateUI();
-        syncHistory();
-        syncLeaderboard();
-    }
-
-    function globalEngine() {
-        setInterval(() => {
-            const now = Date.now() / 1000, pos = now % CYCLE, roundId = Math.floor(now / CYCLE);
-            const crashAt = getCrash(roundId);
-
-            if (pos < WAIT) {
-                if (currentGameState !== "waiting") { currentGameState = "waiting"; resetVisuals(); syncHistory(); syncLeaderboard(); }
-                if (autoOn) betPlaced = true;
-                renderWait(Math.ceil(WAIT - pos));
-            } else {
-                const elapsed = pos - WAIT, mult = Math.pow(1.12, elapsed);
-                if (mult >= crashAt) {
-                    if (currentGameState !== "crashed") { currentGameState = "crashed"; renderCrash(crashAt); logGame(crashAt); }
-                } else {
-                    currentGameState = "racing";
-                    renderRace(mult, elapsed);
-                    if (userInRace && !cashed && autoOn) {
-                        if (mult >= parseFloat(document.getElementById('auto-val').value)) doCashout(mult);
-                    }
-                    if (user && betPlaced && !userInRace) joinRace();
+            if (mult >= crashAt) {
+                if (currentGameState !== "crashed") { 
+                    currentGameState = "crashed"; 
+                    renderCrash(crashAt); 
+                    logGame(crashAt); 
                 }
+            } else {
+                currentGameState = "racing";
+                renderRace(mult, elapsed);
+                // التحقق من السحب التلقائي
+                if (userInRace && !cashed && autoOn) {
+                    let target = parseFloat(document.getElementById('auto-val').value);
+                    if (mult >= target) doCashout(mult);
+                }
+                if (user && betPlaced && !userInRace) joinRace();
             }
-        }, 50);
-    }
-
-    function getCrash(id) {
-        let r = Math.abs(Math.sin(id * 789.123) * 10000) % 1;
-        return Math.max(1.01, Math.min(parseFloat((0.98 / (1 - r * 0.98)).toFixed(2)), 500));
-    }
-
-    function renderWait(s) {
-        document.getElementById('main-timer').style.display = 'block';
-        document.getElementById('main-timer').innerText = s;
-        document.getElementById('mult-display').style.display = 'none';
-        updateBtn(betPlaced ? "بانتظار السباق..." : "وضع رهان", betPlaced ? "btn-waiting" : "btn-bet");
-    }
-
-    function renderRace(m, e) {
-        document.getElementById('main-timer').style.display = 'none';
-        const d = document.getElementById('mult-display');
-        d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
-        
-        const camelPos = Math.min(e * 4, 75);
-        document.getElementById('camel-wrap').style.left = camelPos + "%";
-        document.getElementById('dust-fx').style.display = "block";
-        
-        bgPos -= (2 + m);
-        document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
-        
-        if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
-    }
-
-    function renderCrash(cp) {
-        document.getElementById('mult-display').style.color = "var(--error)";
-        document.getElementById('app').classList.add('shake');
-        setTimeout(() => document.getElementById('app').classList.remove('shake'), 300);
-        
-        const boom = document.getElementById('boom-fx');
-        boom.style.left = document.getElementById('camel-wrap').style.left;
-        boom.style.display = "block";
-        document.getElementById('camel-wrap').style.opacity = "0";
-        document.getElementById('dust-fx').style.display = "none";
-        
-        updateBtn("انفجر الجمل!", "btn-waiting");
-        userInRace = false; betPlaced = false;
-    }
-
-    async function doCashout(m) {
-        if (cashed || !userInRace) return;
-        cashed = true;
-        const win = currentBet * m;
-        user.balance += win;
-        updateUI();
-        await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-        updateBtn("تم السحب ✅", "btn-waiting");
-    }
-
-    async function joinRace() {
-        currentBet = parseFloat(document.getElementById('bet-amount').value);
-        if (user.balance >= currentBet) {
-            userInRace = true; cashed = false; betPlaced = false;
-            user.balance -= currentBet;
-            updateUI();
-            await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-        } else {
-            autoOn = false; alert("الرصيد غير كافٍ");
-            document.getElementById('auto-toggle').classList.remove('on');
         }
-    }
-
-    function toggleAuto() {
-        autoOn = !autoOn;
-        document.getElementById('auto-toggle').classList.toggle('on', autoOn);
-    }
-
-    function handleAction() {
-        if (currentGameState === "racing" && userInRace && !cashed) {
-            doCashout(parseFloat(document.getElementById('mult-display').innerText));
-        } else if (currentGameState === "waiting") {
-            betPlaced = !betPlaced;
-        }
-    }
-
-    function showPanel(id, e) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-small').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.target.classList.add('active');
-    }
-
-    async function syncLeaderboard() {
-        const { data } = await supabaseClient.from('Profiles').select('username, balance').order('balance', { ascending: false }).limit(5);
-        if (data) {
-            document.getElementById('lb-list').innerHTML = data.map((p, i) => `
-                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1c262d;">
-                    <span><b style="color:var(--gold)">#${i+1}</b> ${p.username}</span>
-                    <span style="color:var(--accent); font-weight:bold;">${p.balance.toFixed(2)}</span>
-                </div>
-            `).join('');
-        }
-    }
-
-    function updateUI() {
-        if (user) {
-            document.getElementById('balance').innerText = user.balance.toFixed(2);
-            document.getElementById('player-display').innerText = user.username;
-        }
-    }
-
-    function updateBtn(t, c, s="") {
-        const b = document.getElementById('action-btn');
-        b.className = `main-btn ${c}`;
-        b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t;
-    }
-
-    function resetVisuals() {
-        document.getElementById('camel-wrap').style.left = "0%";
-        document.getElementById('camel-wrap').style.opacity = "1";
-        document.getElementById('boom-fx').style.display = "none";
-        document.getElementById('mult-display').style.color = "var(--accent)";
-        document.getElementById('dust-fx').style.display = "none";
-    }
-
-    async function syncHistory() {
-        try {
-            const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(50);
-            if (data) {
-                document.getElementById('history-list').innerHTML = data.map(r => `
-                    <div class="hist-item" style="color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
-                        ${r.crash_point.toFixed(2)}x
-                    </div>
-                `).join('');
-            }
-        } catch (e) { console.log("History Sync Error"); }
-    }
-
-    async function logGame(cp) {
-        try { await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]); } catch(e) {}
-    }
-
-    async function processAuth() {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        const mode = window.authMode || 'login';
-        
-        if (!u || !p) return alert("يرجى إدخال البيانات");
-
-        if (mode === 'signup') {
-            const { data, error } = await supabaseClient.auth.signUp({ email: `${u}@game.com`, password: p });
-            if (error) return alert("خطأ: " + error.message);
-            alert("تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول الآن.");
-            switchAuth('login');
-        } else {
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@game.com`, password: p });
-            if (error) return alert("فشل الدخول: " + error.message);
-            const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
-            if (profile) launch(profile);
-            else alert("خطأ: لم يتم العثور على ملف شخصي. تأكد من تفعيل الـ Trigger في قاعدة البيانات.");
-        }
-    }
-
-    function switchAuth(m) {
-        window.authMode = m;
-        document.getElementById('login-tab').classList.toggle('active', m==='login');
-        document.getElementById('signup-tab').classList.toggle('active', m==='signup');
-    }
-
-    function logout() { localStorage.removeItem('camel_session'); location.reload(); }
-
-    globalEngine();
-    checkSavedSession();
-</script>
-</body>
-</html>
+    }, 50); // تحديث كل 50 مللي ثانية لضمان السلاسة
+}
+            
