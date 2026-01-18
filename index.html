@@ -25,8 +25,19 @@
         
         .track { height: 120px; background: var(--input); border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 10px 0; background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%; }
         .camel-wrapper { position: absolute; bottom: 10px; left: 0; transition: left 0.4s ease-out; z-index: 5; }
-        .camel { font-size: 50px; transform: scaleX(-1); }
-        .dust { position: absolute; bottom: 5px; left: -10px; width: 20px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(4px); display: none; }
+        .camel { font-size: 50px; transform: scaleX(-1); position: relative; z-index: 10; }
+        
+        /* محسّن: أنيميشن الغبار المتعدد */
+        .dust-container { position: absolute; bottom: 5px; right: 10px; width: 50px; height: 20px; display: none; }
+        .dust-particle { position: absolute; background: rgba(255, 255, 255, 0.2); border-radius: 50%; filter: blur(3px); animation: dustFly 0.6s infinite; }
+        .p1 { width: 12px; height: 12px; left: 0; animation-delay: 0.1s; }
+        .p2 { width: 8px; height: 8px; left: 15px; animation-delay: 0.3s; }
+        .p3 { width: 10px; height: 10px; left: -10px; animation-delay: 0.5s; }
+
+        @keyframes dustFly {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+            100% { transform: translate(30px, -15px) scale(1.5); opacity: 0; }
+        }
         
         .explosion { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
 
@@ -34,7 +45,7 @@
         .extra-tabs { display: flex; gap: 5px; margin-top: 15px; background: #0d1117; padding: 5px; border-radius: 12px; }
         .tab-small { flex: 1; padding: 8px; font-size: 12px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; }
         .tab-small.active { background: #1c262d; color: var(--accent); font-weight: bold; }
-        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 200px; overflow-y: auto; margin-top: 5px; }
+        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 180px; overflow-y: auto; margin-top: 5px; }
         .panel.active { display: block; }
 
         /* Leaderboard Styles */
@@ -93,7 +104,11 @@
         <div class="track" id="track-box">
             <div id="camel-wrap" class="camel-wrapper">
                 <div class="camel">🐪</div>
-                <div id="dust-fx" class="dust"></div>
+                <div id="dust-fx" class="dust-container">
+                    <div class="dust-particle p1"></div>
+                    <div class="dust-particle p2"></div>
+                    <div class="dust-particle p3"></div>
+                </div>
             </div>
             <div id="boom-fx" class="explosion"></div>
         </div>
@@ -118,11 +133,11 @@
 
         <div class="extra-tabs">
             <button class="tab-small active" onclick="showPanel('history')">سجل النتائج</button>
-            <button class="tab-small" onclick="showPanel('leaderboard')">قائمة المتصدرين</button>
+            <button class="tab-small" onclick="showPanel('leaderboard')">المتصدرون</button>
         </div>
 
         <div id="history" class="panel active">
-            <div id="history-list" style="display:flex; flex-wrap:wrap; gap:5px; justify-content: center;"></div>
+            <div id="history-list" style="display:flex; flex-wrap:wrap; gap:5px; justify-content: flex-start;"></div>
         </div>
 
         <div id="leaderboard" class="panel">
@@ -204,6 +219,8 @@
         
         const camelPos = Math.min(e * 4, 75);
         document.getElementById('camel-wrap').style.left = camelPos + "%";
+        
+        // إظهار الغبار أثناء الحركة
         document.getElementById('dust-fx').style.display = "block";
         
         bgPos -= (2 + m);
@@ -300,13 +317,14 @@
         document.getElementById('camel-wrap').style.opacity = "1";
         document.getElementById('boom-fx').style.display = "none";
         document.getElementById('mult-display').style.color = "var(--accent)";
+        document.getElementById('dust-fx').style.display = "none";
     }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(20);
+        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(30);
         if (data) {
             document.getElementById('history-list').innerHTML = data.map(r => `
-                <div style="padding:4px 8px; border-radius:5px; font-size:10px; background:#12191f; border:1px solid #333; color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
+                <div style="padding:5px 10px; border-radius:6px; font-size:11px; background:#1c262d; border:1px solid #333; font-weight:bold; color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
                     ${r.crash_point.toFixed(2)}x
                 </div>
             `).join('');
