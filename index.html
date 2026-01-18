@@ -27,48 +27,49 @@
         .camel-wrapper { position: absolute; bottom: 10px; left: 0; transition: left 0.4s ease-out; z-index: 5; }
         .camel { font-size: 50px; transform: scaleX(-1); position: relative; z-index: 10; }
         
-        /* محسّن: أنيميشن الغبار المتعدد */
+        /* أنيميشن الغبار المطور */
         .dust-container { position: absolute; bottom: 5px; right: 10px; width: 50px; height: 20px; display: none; }
-        .dust-particle { position: absolute; background: rgba(255, 255, 255, 0.2); border-radius: 50%; filter: blur(3px); animation: dustFly 0.6s infinite; }
-        .p1 { width: 12px; height: 12px; left: 0; animation-delay: 0.1s; }
-        .p2 { width: 8px; height: 8px; left: 15px; animation-delay: 0.3s; }
-        .p3 { width: 10px; height: 10px; left: -10px; animation-delay: 0.5s; }
+        .dust-particle { position: absolute; background: rgba(255, 255, 255, 0.25); border-radius: 50%; filter: blur(3px); animation: dustFly 0.6s infinite; }
+        .p1 { width: 14px; height: 14px; left: 0; animation-delay: 0.1s; }
+        .p2 { width: 9px; height: 9px; left: 15px; animation-delay: 0.3s; }
+        .p3 { width: 11px; height: 11px; left: -10px; animation-delay: 0.5s; }
 
         @keyframes dustFly {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-            100% { transform: translate(30px, -15px) scale(1.5); opacity: 0; }
+            0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+            100% { transform: translate(40px, -20px) scale(2); opacity: 0; }
         }
         
         .explosion { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
 
         /* Tabs & Panels */
         .extra-tabs { display: flex; gap: 5px; margin-top: 15px; background: #0d1117; padding: 5px; border-radius: 12px; }
-        .tab-small { flex: 1; padding: 8px; font-size: 12px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; }
-        .tab-small.active { background: #1c262d; color: var(--accent); font-weight: bold; }
-        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 180px; overflow-y: auto; margin-top: 5px; }
+        .tab-small { flex: 1; padding: 10px; font-size: 13px; border: none; background: transparent; color: #888; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        .tab-small.active { background: #1c262d; color: var(--accent); }
+        
+        .panel { display: none; background: #0d1117; border-radius: 15px; padding: 12px; height: 200px; overflow-y: auto; margin-top: 5px; border: 1px solid #1c262d; }
         .panel.active { display: block; }
 
-        /* Leaderboard Styles */
-        .lb-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #1c262d; font-size: 13px; }
-        .lb-rank { color: var(--gold); font-weight: bold; margin-left: 10px; }
+        /* History List */
+        #history-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
+        .hist-item { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: #1c262d; border: 1px solid #333; font-weight: 900; }
 
-        /* Existing Controls */
+        /* Controls */
         .controls { background: #0d1117; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .input-row { display: flex; gap: 8px; align-items: flex-end; }
         .input-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-        .field-small { width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #333; background: var(--input); color: white; text-align: center; font-weight: bold; outline: none; }
+        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: var(--input); color: white; text-align: center; font-weight: bold; outline: none; }
         
-        .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 10px; cursor: pointer; border: 1px solid #333; min-width: 80px; justify-content: space-between; }
+        .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 10px; cursor: pointer; border: 1px solid #333; min-width: 85px; justify-content: space-between; }
         .toggle-container.on { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
-        .switch { width: 30px; height: 16px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
+        .switch { width: 30px; height: 16px; background: #333; border-radius: 20px; position: relative; }
         .toggle-container.on .switch { background: var(--accent); }
         .dot { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; transition: 0.3s; }
         .toggle-container.on .dot { right: 16px; }
 
-        .main-btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .main-btn { width: 100%; padding: 16px; border-radius: 15px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
-        .btn-waiting { background: #222; color: #555; pointer-events: none; }
+        .btn-waiting { background: #222; color: #666; pointer-events: none; }
 
         .shake { animation: shakeAnim 0.3s ease-in-out; }
         @keyframes shakeAnim { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
@@ -79,21 +80,24 @@
 
 <div class="app-container" id="app">
     <div id="auth-overlay">
-        <h2 style="color: var(--accent); text-align: center;">سباق الهجن 🐪</h2>
+        <h1 style="color: var(--gold); text-align: center; font-size: 32px; margin-bottom: 5px;">سباق الهجن</h1>
+        <p style="text-align: center; color: var(--accent); margin-bottom: 30px; font-weight: bold;">Camel Dash Pro</p>
+        
         <div class="auth-tabs" style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="tab-btn active" id="login-tab" onclick="switchAuth('login')" style="flex:1; padding:10px; cursor:pointer;">دخول</button>
-            <button class="tab-btn" id="signup-tab" onclick="switchAuth('signup')" style="flex:1; padding:10px; cursor:pointer;">تسجيل</button>
+            <button class="tab-small active" id="login-tab" onclick="switchAuth('login')" style="flex:1;">دخول</button>
+            <button class="tab-small" id="signup-tab" onclick="switchAuth('signup')" style="flex:1;">تسجيل</button>
         </div>
-        <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; background: #12191f; color: white; text-align: center;">
-        <input type="password" id="password" class="input-field" placeholder="كلمة المرور" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background: #12191f; color: white; text-align: center;">
-        <button class="main-btn btn-bet" onclick="processAuth()">ابدأ الآن</button>
+        
+        <input type="text" id="username" class="field-small" placeholder="اسم المستخدم" style="margin-bottom: 10px;">
+        <input type="password" id="password" class="field-small" placeholder="كلمة المرور" style="margin-bottom: 20px;">
+        <button class="main-btn btn-bet" onclick="processAuth()">ابدأ السباق الآن</button>
     </div>
 
     <div id="game-screen">
         <div class="header">
-            <div onclick="logout()" style="cursor: pointer;">
-                <span id="player-display" style="font-weight: bold; color: var(--accent);">جاري التحميل...</span>
-                <div style="font-size: 9px; opacity: 0.6; text-align: center;">خروج</div>
+            <div onclick="logout()" style="cursor: pointer; background: #0d1117; padding: 5px 12px; border-radius: 10px;">
+                <span id="player-display" style="font-weight: bold; color: var(--accent);">...</span>
+                <span style="font-size: 10px; opacity: 0.5; margin-right: 5px;">خروج</span>
             </div>
             <div id="bal-box" class="balance-box">💰 <span id="balance">0.00</span></div>
         </div>
@@ -116,15 +120,15 @@
         <div class="controls">
             <div class="input-row">
                 <div class="input-group">
-                    <label style="font-size:10px">الرهان</label>
-                    <input type="number" id="bet-amount" class="field-small" value="10">
+                    <label style="font-size:11px; margin-right:5px;">مبلغ الرهان</label>
+                    <input type="number" id="bet-amount" class="field-small" value="10" min="1">
                 </div>
                 <div class="input-group">
-                    <label style="font-size:10px">هدف تلقائي</label>
+                    <label style="font-size:11px; margin-right:5px;">هدف تلقائي</label>
                     <input type="number" id="auto-val" class="field-small" value="2.00" step="0.1">
                 </div>
                 <div id="auto-toggle" class="toggle-container" onclick="toggleAuto()">
-                    <span style="font-size:10px">تلقائي</span>
+                    <span style="font-size:11px; font-weight: bold;">تلقائي</span>
                     <div class="switch"><div class="dot"></div></div>
                 </div>
             </div>
@@ -132,12 +136,12 @@
         </div>
 
         <div class="extra-tabs">
-            <button class="tab-small active" onclick="showPanel('history')">سجل النتائج</button>
-            <button class="tab-small" onclick="showPanel('leaderboard')">المتصدرون</button>
+            <button class="tab-small active" onclick="showPanel('history', event)">سجل النتائج</button>
+            <button class="tab-small" onclick="showPanel('leaderboard', event)">المتصدرون</button>
         </div>
 
         <div id="history" class="panel active">
-            <div id="history-list" style="display:flex; flex-wrap:wrap; gap:5px; justify-content: flex-start;"></div>
+            <div id="history-list"></div>
         </div>
 
         <div id="leaderboard" class="panel">
@@ -219,8 +223,6 @@
         
         const camelPos = Math.min(e * 4, 75);
         document.getElementById('camel-wrap').style.left = camelPos + "%";
-        
-        // إظهار الغبار أثناء الحركة
         document.getElementById('dust-fx').style.display = "block";
         
         bgPos -= (2 + m);
@@ -280,20 +282,20 @@
         }
     }
 
-    function showPanel(id) {
+    function showPanel(id, e) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-small').forEach(t => t.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        event.target.classList.add('active');
+        e.target.classList.add('active');
     }
 
     async function syncLeaderboard() {
         const { data } = await supabaseClient.from('Profiles').select('username, balance').order('balance', { ascending: false }).limit(5);
         if (data) {
             document.getElementById('lb-list').innerHTML = data.map((p, i) => `
-                <div class="lb-row">
-                    <span><span class="lb-rank">#${i+1}</span> ${p.username}</span>
-                    <span style="color:var(--gold)">${p.balance.toFixed(2)}</span>
+                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1c262d;">
+                    <span><b style="color:var(--gold)">#${i+1}</b> ${p.username}</span>
+                    <span style="color:var(--accent); font-weight:bold;">${p.balance.toFixed(2)}</span>
                 </div>
             `).join('');
         }
@@ -321,18 +323,20 @@
     }
 
     async function syncHistory() {
-        const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(30);
-        if (data) {
-            document.getElementById('history-list').innerHTML = data.map(r => `
-                <div style="padding:5px 10px; border-radius:6px; font-size:11px; background:#1c262d; border:1px solid #333; font-weight:bold; color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
-                    ${r.crash_point.toFixed(2)}x
-                </div>
-            `).join('');
-        }
+        try {
+            const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(50);
+            if (data) {
+                document.getElementById('history-list').innerHTML = data.map(r => `
+                    <div class="hist-item" style="color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">
+                        ${r.crash_point.toFixed(2)}x
+                    </div>
+                `).join('');
+            }
+        } catch (e) { console.log("History Sync Error"); }
     }
 
     async function logGame(cp) {
-        await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]);
+        try { await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]); } catch(e) {}
     }
 
     async function processAuth() {
@@ -345,13 +349,14 @@
         if (mode === 'signup') {
             const { data, error } = await supabaseClient.auth.signUp({ email: `${u}@game.com`, password: p });
             if (error) return alert("خطأ: " + error.message);
-            alert("تم إنشاء الحساب، يرجى تسجيل الدخول");
+            alert("تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول الآن.");
             switchAuth('login');
         } else {
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@game.com`, password: p });
             if (error) return alert("فشل الدخول: " + error.message);
             const { data: profile } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
             if (profile) launch(profile);
+            else alert("خطأ: لم يتم العثور على ملف شخصي. تأكد من تفعيل الـ Trigger في قاعدة البيانات.");
         }
     }
 
