@@ -3,52 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن العالمي | Dynamic Camel Dash</title>
+    <title>سباق الهجن | Camel Dash Pro</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        
         .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; overflow-y: auto; scrollbar-width: none; }
         #auth-overlay { position: absolute; inset: 0; background: rgba(11, 20, 26, 0.98); z-index: 1000; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
-        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .balance-box { background: rgba(255, 204, 0, 0.15); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 16px; }
-        
         #main-timer { font-size: 80px; font-weight: 900; color: var(--gold); text-align: center; height: 100px; line-height: 100px; }
         .multiplier { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-align: center; height: 100px; line-height: 100px; }
-        
         .track { height: 120px; background: var(--input); border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 10px 0; background-image: linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.03) 50%); background-size: 60px 100%; }
-        .camel-wrapper { position: absolute; bottom: 10px; left: 0; transition: left 0.2s linear; z-index: 5; }
+        .camel-wrapper { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; z-index: 5; }
         .camel { font-size: 50px; transform: scaleX(-1); }
-        
-        .dust-container { position: absolute; bottom: 5px; right: 10px; width: 50px; height: 20px; display: none; }
-        .dust-particle { position: absolute; background: rgba(255, 255, 255, 0.25); border-radius: 50%; filter: blur(3px); animation: dustFly 0.6s infinite; }
-        .p1 { width: 14px; height: 14px; left: 0; animation-delay: 0.1s; }
-        .p2 { width: 9px; height: 9px; left: 15px; animation-delay: 0.3s; }
-        .p3 { width: 11px; height: 11px; left: -10px; animation-delay: 0.5s; }
-        @keyframes dustFly { 0% { transform: translate(0, 0) scale(1); opacity: 0.6; } 100% { transform: translate(40px, -20px) scale(2); opacity: 0; } }
-        
         .explosion { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 6; animation: explode 0.5s ease-out; }
         @keyframes explode { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-
         .controls { background: #0d1117; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .input-row { display: flex; gap: 8px; align-items: flex-end; }
-        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: var(--input); color: white; text-align: center; font-weight: bold; }
-        
+        .field-small { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; background: var(--input); color: white; text-align: center; font-weight: bold; outline: none; }
         .toggle-container { display: flex; align-items: center; background: #1c262d; padding: 8px; border-radius: 10px; cursor: pointer; border: 1px solid #333; min-width: 85px; justify-content: space-between; }
         .toggle-container.on { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
         .switch { width: 30px; height: 16px; background: #333; border-radius: 20px; position: relative; }
         .toggle-container.on .switch { background: var(--accent); }
         .dot { width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; transition: 0.3s; }
         .toggle-container.on .dot { right: 16px; }
-
         .main-btn { width: 100%; padding: 16px; border-radius: 15px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cashout { background: var(--error); color: white; }
         .btn-waiting { background: #222; color: #666; pointer-events: none; }
-
         .panel { background: #0d1117; border-radius: 15px; padding: 12px; height: 180px; overflow-y: auto; margin-top: 10px; border: 1px solid #1c262d; }
         #history-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .hist-item { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: #1c262d; border: 1px solid #333; font-weight: 900; }
@@ -76,7 +60,6 @@
         <div class="track" id="track-box">
             <div id="camel-wrap" class="camel-wrapper">
                 <div class="camel">🐪</div>
-                <div id="dust-fx" class="dust-container"><div class="dust-particle p1"></div><div class="dust-particle p2"></div><div class="dust-particle p3"></div></div>
             </div>
             <div id="boom-fx" class="explosion"></div>
         </div>
@@ -91,7 +74,7 @@
         </div>
 
         <div class="panel">
-            <div style="font-size:12px; margin-bottom:8px; color:var(--gold)">آخر 50 جولة:</div>
+            <div style="font-size:12px; margin-bottom:8px; color:var(--gold)">سجل النتائج الفوري:</div>
             <div id="history-list"></div>
         </div>
     </div>
@@ -103,9 +86,9 @@
 
     let user = null, betPlaced = false, userInRace = false, cashed = false, currentBet = 0, autoOn = false;
     let currentGameState = "waiting"; 
-    let nextRoundTime = Date.now() + 5000; // وقت الجولة القادمة
-    let gameStartTime = 0; // وقت بدء السباق الحالي
-    let currentCrashPoint = 0; // نقطة الانفجار للجولة الحالية
+    let nextRoundTime = 0; 
+    let gameStartTime = 0; 
+    let currentCrashPoint = 0;
     let bgPos = 0;
 
     async function checkSavedSession() {
@@ -123,36 +106,39 @@
         updateUI(); syncHistory();
     }
 
-    // المحرك الديناميكي الجديد
     function globalEngine() {
         setInterval(() => {
             const now = Date.now();
 
-            // 1. نحن في فترة العد التنازلي قبل بدء السباق
+            // 1. العد التنازلي والـ Pause
             if (now < nextRoundTime) {
-                if (currentGameState !== "waiting") {
-                    currentGameState = "waiting";
-                    resetVisuals();
-                    syncHistory();
+                let diff = (nextRoundTime - now) / 1000;
+                
+                if (diff > 5) { // فترة الـ Pause (3 ثواني)
+                    currentGameState = "paused";
+                    const d = document.getElementById('mult-display');
+                    d.style.display = 'block';
+                    d.style.color = 'var(--error)';
+                    d.innerText = currentCrashPoint.toFixed(2) + "x";
+                    document.getElementById('main-timer').style.display = 'none';
+                    updateBtn("انفجر الجمل!", "btn-waiting");
+                } else { // فترة الـ 5 ثواني (العد التنازلي)
+                    if (currentGameState !== "waiting") {
+                        currentGameState = "waiting";
+                        resetVisuals();
+                    }
+                    renderWait(Math.ceil(diff));
+                    if (autoOn) betPlaced = true;
                 }
-                let timeLeft = Math.ceil((nextRoundTime - now) / 1000);
-                renderWait(timeLeft);
-                if (autoOn) betPlaced = true; 
             } 
-            // 2. الجولة بدأت والسباق جاري
+            // 2. حالة السباق
             else if (gameStartTime > 0) {
                 const elapsed = (now - gameStartTime) / 1000;
                 const mult = Math.pow(1.08, elapsed); 
 
                 if (mult >= currentCrashPoint) {
-                    if (currentGameState !== "crashed") {
-                        currentGameState = "crashed";
-                        renderCrash(currentCrashPoint);
-                        logGame(currentCrashPoint);
-                        
-                        // بدء جولة جديدة بعد 5 ثواني من الانفجار
-                        nextRoundTime = Date.now() + 5000;
-                        gameStartTime = 0; 
+                    if (currentGameState === "racing") {
+                        handleCrash(currentCrashPoint);
                     }
                 } else {
                     currentGameState = "racing";
@@ -161,7 +147,7 @@
                     if (user && betPlaced && !userInRace) joinRace();
                 }
             }
-            // 3. لحظة البداية الفعلية للسباق
+            // 3. بدء جولة جديدة
             else {
                 currentCrashPoint = generateCrashPoint();
                 gameStartTime = Date.now();
@@ -172,8 +158,28 @@
 
     function generateCrashPoint() {
         let r = Math.random();
-        if (r < 0.03) return 1.00; // انفجار فوري بنسبة 3%
+        if (r < 0.03) return 1.00;
         return parseFloat((99 / (100 - (r * 100))).toFixed(2));
+    }
+
+    // دالة التعامل مع الانفجار فوراً
+    async function handleCrash(cp) {
+        currentGameState = "crashed";
+        gameStartTime = 0;
+        nextRoundTime = Date.now() + 8000; // 3 ثواني رؤية + 5 ثواني عد
+        
+        // تأثيرات بصرية فورية
+        const boom = document.getElementById('boom-fx');
+        boom.style.left = document.getElementById('camel-wrap').style.left;
+        boom.style.display = "block";
+        document.getElementById('camel-wrap').style.opacity = "0";
+        
+        userInRace = false; 
+        betPlaced = false;
+
+        // تسجيل فوري وتحديث السجل فوري
+        await logGame(cp);
+        syncHistory();
     }
 
     function renderWait(s) {
@@ -187,25 +193,14 @@
         document.getElementById('main-timer').style.display = 'none';
         const d = document.getElementById('mult-display');
         d.style.display = 'block'; d.innerText = m.toFixed(2) + "x";
+        d.style.color = 'var(--accent)';
         
         const camelPos = Math.min(e * 3, 75); 
         document.getElementById('camel-wrap').style.left = camelPos + "%";
-        document.getElementById('dust-fx').style.display = "block";
         bgPos -= (2 + Math.log(m + 1));
         document.getElementById('track-box').style.backgroundPosition = bgPos + "px 0px";
         
         if (userInRace && !cashed) updateBtn("سحب الأرباح", "btn-cashout", (m * currentBet).toFixed(2));
-    }
-
-    function renderCrash(cp) {
-        document.getElementById('mult-display').style.color = "var(--error)";
-        const boom = document.getElementById('boom-fx');
-        boom.style.left = document.getElementById('camel-wrap').style.left;
-        boom.style.display = "block";
-        document.getElementById('camel-wrap').style.opacity = "0";
-        document.getElementById('dust-fx').style.display = "none";
-        updateBtn("انفجر الجمل!", "btn-waiting");
-        userInRace = false; betPlaced = false;
     }
 
     async function doCashout(m) {
@@ -223,39 +218,29 @@
             userInRace = true; cashed = false; betPlaced = false;
             user.balance -= currentBet; updateUI();
             await supabaseClient.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-        } else { autoOn = false; alert("الرصيد غير كافٍ"); }
+        } else { autoOn = false; alert("رصيدك غير كافٍ"); }
     }
 
     function toggleAuto() { autoOn = !autoOn; document.getElementById('auto-toggle').classList.toggle('on', autoOn); }
-    
-    function handleAction() {
-        if (currentGameState === "racing" && userInRace && !cashed) {
-            doCashout(parseFloat(document.getElementById('mult-display').innerText));
-        } else if (currentGameState === "waiting") {
-            betPlaced = !betPlaced;
-        }
+    function handleAction() { 
+        if (currentGameState === "racing" && userInRace && !cashed) doCashout(parseFloat(document.getElementById('mult-display').innerText)); 
+        else if (currentGameState === "waiting" || currentGameState === "paused") betPlaced = !betPlaced; 
     }
-
     function updateUI() { if (user) { document.getElementById('balance').innerText = user.balance.toFixed(2); document.getElementById('player-display').innerText = user.username; } }
+    function updateBtn(t, c, s="") { const b = document.getElementById('action-btn'); b.className = `main-btn ${c}`; b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; }
     
-    function updateBtn(t, c, s="") {
-        const b = document.getElementById('action-btn');
-        b.className = `main-btn ${c}`;
-        b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t;
-    }
-
-    function resetVisuals() {
-        document.getElementById('camel-wrap').style.left = "0%";
-        document.getElementById('camel-wrap').style.opacity = "1";
-        document.getElementById('boom-fx').style.display = "none";
-        document.getElementById('mult-display').style.color = "var(--accent)";
+    function resetVisuals() { 
+        document.getElementById('camel-wrap').style.left = "0%"; 
+        document.getElementById('camel-wrap').style.opacity = "1"; 
+        document.getElementById('boom-fx').style.display = "none"; 
+        document.getElementById('mult-display').style.color = 'var(--accent)';
     }
 
     async function syncHistory() {
         const { data } = await supabaseClient.from('GameHistory').select('crash_point').order('created_at', { ascending: false }).limit(50);
         if (data) document.getElementById('history-list').innerHTML = data.map(r => `<div class="hist-item" style="color:${r.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">${r.crash_point.toFixed(2)}x</div>`).join('');
     }
-
+    
     async function logGame(cp) { await supabaseClient.from('GameHistory').insert([{ crash_point: cp }]); }
 
     async function processAuth() {
@@ -264,13 +249,12 @@
         if (error) {
             const { data: signData, error: signErr } = await supabaseClient.auth.signUp({ email: `${u}@game.com`, password: p });
             if (signErr) return alert("خطأ في البيانات");
-            alert("تم تسجيلك كلاعب جديد!"); location.reload();
+            alert("تم تسجيلك بنجاح!"); location.reload();
         } else {
             const { data: prof } = await supabaseClient.from('Profiles').select('*').eq('id', data.user.id).single();
             if (prof) launch(prof);
         }
     }
-
     globalEngine(); checkSavedSession();
 </script>
 </body>
