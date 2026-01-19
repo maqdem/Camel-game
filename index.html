@@ -3,81 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - النظام المتكامل</title>
+    <title>سباق الهجن Pro - الإصدار الكامل</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b141a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3504/3504491.png">
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; position: relative; overflow: hidden; }
-        #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
-        .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 20px; padding: 5px; }
-        .auth-tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #666; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 15px; border-radius: 25px; border: 1px solid #2d333b; position: relative; display: flex; flex-direction: column; }
+        
+        /* Auth Overlay */
+        #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 25px; border-radius: 25px; }
+        .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 15px; padding: 5px; }
+        .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #666; }
         .auth-tab.active { background: var(--card); color: var(--accent); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .user-section { display: flex; align-items: center; gap: 10px; }
-        .logout-btn { background: none; border: 1px solid var(--error); color: var(--error); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
-        .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 6px 15px; border-radius: 12px; color: var(--gold); font-weight: bold; }
-        #display-zone { height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #timer-val { font-size: 85px; font-weight: 900; color: var(--gold); }
-        #mult-val { font-size: 75px; font-weight: 900; transition: color 0.3s; }
-        .track { height: 140px; background: #0d1117; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 10px 0; background-image: linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 100%; }
-        .camel-wrap { position: absolute; bottom: 15px; left: 0; transition: left 0.1s linear; z-index: 5; }
-        .camel { font-size: 55px; transform: scaleX(-1); }
-        .dust { position: absolute; bottom: 5px; width: 6px; height: 6px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; animation: dustFly 0.6s linear forwards; pointer-events: none; }
-        @keyframes dustFly { 0% { transform: scale(1) translate(0,0); opacity: 0.8; } 100% { transform: scale(3) translate(-50px, -20px); opacity: 0; } }
-        .boom { position: absolute; width: 70px; height: 70px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; display: none; z-index: 10; animation: boomScale 0.4s ease-out forwards; }
-        @keyframes boomScale { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.8); opacity: 0; } }
-        .coin { position: absolute; color: var(--gold); font-size: 24px; pointer-events: none; z-index: 1000; animation: coinToWallet 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards; }
-        @keyframes coinToWallet { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-300px) scale(0.5); opacity: 0; } }
-        .controls { background: #0d1117; padding: 15px; border-radius: 20px; }
-        .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+
+        /* UI Elements */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; }
+        .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; color: var(--gold); font-weight: bold; }
+        .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-left: 8px; }
+        
+        #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
+        #mult-val { font-size: 60px; font-weight: 900; }
+
+        .track { height: 130px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
+        .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; z-index: 5; }
+        .camel { font-size: 50px; transform: scaleX(-1); }
+
+        .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 10px; }
         .field { flex: 1; text-align: center; }
-        .field label { display: block; font-size: 10px; color: #888; margin-bottom: 4px; }
-        .field input { width: 100%; background: var(--input); border: 1px solid #333; color: white; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; }
-        .auto-btn { display: flex; align-items: center; justify-content: center; background: var(--input); border: 1px solid #333; border-radius: 10px; cursor: pointer; transition: 0.3s; font-size: 12px; font-weight: bold; height: 40px; color: #666; }
-        .auto-btn.active { background: rgba(0, 255, 136, 0.1); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); }
-        .auto-btn.locked { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-        .main-btn { width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 22px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .field label { display: block; font-size: 9px; color: #888; margin-bottom: 3px; }
+        .field input { width: 100%; background: var(--input); border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; }
+        
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cash { background: var(--error); color: white; }
         .btn-wait { background: #222; color: #555; pointer-events: none; }
-        #history-box { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 6px; height: 90px; overflow-y: auto; scrollbar-width: none; }
-        .hi { padding: 4px 10px; border-radius: 6px; font-size: 11px; background: #0d1117; font-weight: bold; }
 
-        /* ستايل نافذة الإيداع ولوحة التحكم */
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; padding:25px; flex-direction:column; justify-content:center; align-items:center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; border: 1px solid #333; }
+        /* History & Referral */
+        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 60px; overflow-y: auto; margin-top: 5px; }
+        .hi { padding: 3px 8px; border-radius: 5px; font-size: 10px; background: #0d1117; font-weight: bold; }
+        .ref-section { font-size: 11px; text-align: center; margin-top: 10px; color: #888; border-top: 1px solid #333; padding-top: 10px; }
+
+        /* Modal Style */
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center; padding:20px; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div id="auth-overlay">
-        <h2 style="text-align:center; color: var(--gold)">🐪 سباق الهجن</h2>
+        <h2 style="text-align:center; color: var(--gold); margin-bottom: 20px;">🐪 سباق الهجن PRO</h2>
         <div class="auth-tabs">
-            <div id="tb-login" class="auth-tab active" onclick="switchAuth('login')">تسجيل دخول</div>
-            <div id="tb-signup" class="auth-tab" onclick="switchAuth('signup')">إنشاء حساب</div>
+            <div id="tb-login" class="auth-tab active" onclick="switchAuth('login')">دخول</div>
+            <div id="tb-signup" class="auth-tab" onclick="switchAuth('signup')">تسجيل</div>
         </div>
-        <input type="text" id="ui" placeholder="اسم المستخدم" style="width:100%; margin-bottom:10px; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; text-align:center">
-        <input type="password" id="pi" placeholder="كلمة المرور" style="width:100%; margin-bottom:20px; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; text-align:center">
+        <input type="text" id="ui" placeholder="اسم المستخدم" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
+        <input type="password" id="pi" placeholder="كلمة المرور" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
+        <input type="text" id="ri" placeholder="كود الإحالة (اختياري)" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:20px; text-align:center">
         <button id="auth-bt" class="main-btn btn-bet" onclick="handleAuth()">دخول</button>
     </div>
 
     <div class="header">
         <div class="user-section">
-            <button class="logout-btn" onclick="logout()">خروج</button>
-            <span id="un" style="font-weight:bold; color:var(--accent); cursor:pointer">...</span>
+            <button class="logout-btn" onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">خروج</button>
+            <span id="un" style="font-weight:bold; color:var(--accent); cursor:pointer; margin-right:5px">...</span>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button onclick="openDeposit()" style="background:var(--gold); border:none; padding:5px 12px; border-radius:8px; font-weight:bold; cursor:pointer; color:#000;">+</button>
+        <div style="display: flex; align-items: center;">
+            <button class="btn-deposit" onclick="openDeposit()">+</button>
             <div class="balance-box">💰 <span id="ub">0.00</span></div>
         </div>
     </div>
@@ -88,98 +89,47 @@
     </div>
 
     <div class="track" id="tr">
-        <div id="cw" class="camel-wrap">
-            <div class="camel">🐪</div>
-        </div>
-        <div id="bm" class="boom"></div>
+        <div id="cw" class="camel-wrap"><div class="camel">🐪</div></div>
+        <div id="bm" style="display:none; position:absolute; width:60px; height:60px; background:radial-gradient(circle, #ffcc00, transparent); border-radius:50%; z-index:10;"></div>
     </div>
 
     <div class="controls">
         <div class="input-group">
             <div class="field"><label>الرهان</label><input type="number" id="ba" value="10"></div>
             <div class="field"><label>هدف تلقائي</label><input type="number" id="av" value="2.00"></div>
-            <div class="field" style="flex: 0.6">
-                <label>تلقائي</label>
-                <div id="at" class="auto-btn" onclick="toggleAuto()">OFF</div>
-            </div>
         </div>
         <button id="ab" class="main-btn btn-bet" onclick="mainAction()">وضع رهان</button>
     </div>
 
     <div id="history-box"></div>
+    
+    <div class="ref-section" id="ref-ui">
+        كود الإحالة الخاص بك: <b id="my-ref-code" style="color:var(--gold)">---</b>
+    </div>
 </div>
 
 <div id="deposit-modal" class="modal">
     <div class="modal-content">
-        <h3 style="text-align:center; color:var(--gold)">شحن رصيد USDT</h3>
-        <p style="font-size:11px; color:#aaa; text-align:center;">أرسل المبلغ لشبكة (Tron TRC20):</p>
-        <div id="wallet-addr" style="background:#0d1117; padding:12px; border-radius:10px; word-break:break-all; color:var(--accent); font-size:13px; text-align:center; margin-bottom:15px; border:1px solid #333;">
+        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">إيداع USDT (TRC20)</h3>
+        <p style="font-size:10px; color:#aaa; text-align:center; margin-bottom:10px;">حول المبلغ للعنوان التالي:</p>
+        <div style="background:#0d1117; padding:10px; border-radius:8px; word-break:break-all; color:var(--accent); font-size:11px; text-align:center; margin-bottom:15px; border:1px solid #333;">
             TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg
         </div>
-        <input type="text" id="tx-hash" placeholder="أدخل رقم العملية (Hash)" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
-        <input type="number" id="dep-amount" placeholder="المبلغ المودع" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
-        <button class="main-btn btn-bet" style="font-size:16px; padding:12px;" onclick="submitDeposit()">تأكيد الطلب</button>
-        <button onclick="closeDeposit()" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer;">إلغاء</button>
+        <input type="text" id="tx-hash" placeholder="رقم العملية (Hash)" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
+        <input type="number" id="dep-amount" placeholder="المبلغ" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
+        <button class="main-btn btn-bet" style="font-size:16px; padding:12px;" onclick="submitDeposit()">تأكيد الإرسال</button>
+        <button onclick="closeDeposit()" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer; font-size:12px;">إلغاء</button>
     </div>
 </div>
 
-<div id="admin-panel" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:4000; padding:20px; overflow-y:auto;">
-    <h2 style="color:var(--gold)">لوحة التحكم 🛠️</h2>
-    <button onclick="document.getElementById('admin-panel').style.display='none'" style="color:var(--error); background:none; border:none; margin-bottom:20px;">إغلاق</button>
-    <div id="pending-list">جاري التحميل...</div>
-</div>
-
 <script>
-    // تسجيل الـ Service Worker لـ PWA
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
-
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
-    let mode = 'login', user = null, state = 'waiting';
-    let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, autoEnabled = false, bgX = 0;
+    let user = null, state = 'waiting', mode = 'login';
+    let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false;
 
-    // دالة فتح الإيداع
-    function openDeposit() { document.getElementById('deposit-modal').style.display = 'flex'; }
-    function closeDeposit() { document.getElementById('deposit-modal').style.display = 'none'; }
-
-    // إرسال طلب إيداع
-    async function submitDeposit() {
-        const hash = document.getElementById('tx-hash').value;
-        const amount = document.getElementById('dep-amount').value;
-        if(!hash || !amount) return alert("يرجى ملء البيانات");
-        const { error } = await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(amount), tx_hash: hash }]);
-        if(error) alert("خطأ أو رقم عملية مكرر");
-        else { alert("تم الإرسال! سيتم الشحن بعد التأكد."); closeDeposit(); }
-    }
-
-    // لوحة التحكم السرية (اضغط على اسمك 5 مرات)
-    let adminClicks = 0;
-    document.getElementById('un').onclick = () => {
-        adminClicks++;
-        if(adminClicks >= 5) { document.getElementById('admin-panel').style.display = 'block'; loadAdminData(); adminClicks = 0; }
-    };
-
-    async function loadAdminData() {
-        const { data } = await sb.from('deposits').select('*, profiles(username)').eq('status', 'pending');
-        const list = document.getElementById('pending-list');
-        list.innerHTML = data && data.length > 0 ? data.map(d => `
-            <div style="background:#1c262d; padding:15px; border-radius:10px; margin-bottom:10px; border:1px solid #333;">
-                <p>👤 ${d.profiles.username} | 💰 ${d.amount} USDT</p>
-                <button onclick="approveDep('${d.id}', '${d.user_id}', ${d.amount})" style="background:var(--accent); border:none; padding:5px 10px; border-radius:5px; font-weight:bold;">موافقة ✅</button>
-            </div>
-        `).join('') : "لا توجد طلبات.";
-    }
-
-    async function approveDep(id, uid, amt) {
-        await sb.from('deposits').update({ status: 'completed' }).eq('id', id);
-        const { data: p } = await sb.from('Profiles').select('balance').eq('id', uid).single();
-        await sb.from('Profiles').update({ balance: p.balance + amt }).eq('id', uid);
-        alert("تم الشحن!"); loadAdminData();
-    }
-
-    // --- نظام اللعبة الأساسي ---
     function switchAuth(m) {
         mode = m;
         document.getElementById('tb-login').classList.toggle('active', m==='login');
@@ -188,14 +138,17 @@
     }
 
     async function handleAuth() {
-        const u = document.getElementById('ui').value, p = document.getElementById('pi').value;
-        if(!u || p.length < 6) return alert("بيانات غير كافية");
+        const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
+        if(!u || p.length < 6) return alert("البيانات غير صالحة");
         const email = `${u.trim()}@camel.com`;
+
         if(mode === 'signup') {
             const { data, error } = await sb.auth.signUp({ email, password: p });
             if(error) return alert("خطأ: " + error.message);
-            await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0 }]);
-            alert("تم التسجيل! سجل دخولك"); switchAuth('login');
+            // إنشاء بروفايل مع كود إحالة عشوائي
+            const refCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+            await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: refCode, referred_by: r || null }]);
+            alert("تم التسجيل! يمكنك الآن الدخول."); switchAuth('login');
         } else {
             const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
             if(error) return alert("فشل الدخول");
@@ -204,34 +157,41 @@
         }
     }
 
+    function openDeposit() { document.getElementById('deposit-modal').style.display = 'flex'; }
+    function closeDeposit() { document.getElementById('deposit-modal').style.display = 'none'; }
+
+    async function submitDeposit() {
+        const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
+        if(!h || !a) return alert("املأ الحقول");
+        await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
+        alert("تم إرسال الطلب للمراجعة ✅"); closeDeposit();
+    }
+
     function startApp() {
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('un').innerText = user.username;
         document.getElementById('ub').innerText = user.balance.toFixed(2);
+        document.getElementById('my-ref-code').innerText = user.referral_code;
         engine(); sync();
     }
 
-    // 4. دالة الربح المعدلة لضمان هامش المنصة (الامتياز الرابع)
     function getCrash() {
         let r = Math.random() * 100;
-        if (r <= 3) return 1.00; // نسبة خسارة فورية 3%
-        let sR = Math.random() * 100;
-        if (sR <= 60) return parseFloat((1.01 + Math.random() * 0.98).toFixed(2));
-        if (sR <= 85) return parseFloat((2.00 + Math.random() * 3.00).toFixed(2));
-        if (sR <= 98) return parseFloat((5.01 + Math.random() * 14.99).toFixed(2));
-        return parseFloat((20.01 + Math.random() * 80.00).toFixed(2));
+        if (r <= 3) return 1.00; // نسبة ربح للمنصة 3%
+        let s = Math.random() * 100;
+        if (s <= 60) return parseFloat((1.01 + Math.random() * 0.9).toFixed(2));
+        if (s <= 85) return parseFloat((2.00 + Math.random() * 3.0).toFixed(2));
+        return parseFloat((5.0 + Math.random() * 45.0).toFixed(2));
     }
 
     function engine() {
         setInterval(() => {
             const now = Date.now();
-            if (state === 'paused') { if (now > nextT - 5000) state = 'waiting'; return; }
             if(now < nextT) {
                 state = 'waiting';
-                document.getElementById('timer-val').innerText = Math.ceil((nextT-now)/1000);
+                document.getElementById('timer-val').innerText = Math.ceil((nextT - now)/1000);
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
-                updateUI(betted ? "بانتظار السباق..." : "وضع رهان", betted ? "btn-wait" : "btn-bet");
                 resetScene();
             } else if (startT > 0) {
                 state = 'racing';
@@ -242,53 +202,49 @@
                     document.getElementById('timer-val').style.display = 'none';
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = m.toFixed(2)+'x';
-                    document.getElementById('cw').style.left = Math.min(el * 4.5, 80) + '%';
-                    bgX -= (1 + m); document.getElementById('tr').style.backgroundPosition = bgX + 'px 0px';
-                    if(betted && !cashed) {
-                        updateUI("سحب الأرباح", "btn-cash", (m * parseFloat(document.getElementById('ba').value)).toFixed(2));
-                        if(autoEnabled && m >= parseFloat(document.getElementById('av').value)) doCashout(m);
-                    }
+                    document.getElementById('cw').style.left = Math.min(el * 5, 80) + '%';
+                    if(betted && !cashed && m >= parseFloat(document.getElementById('av').value)) doCashout(m);
                 }
             } else { crashP = getCrash(); startT = Date.now(); cashed = false; }
         }, 50);
     }
 
-    async function explosion() {
-        startT = 0; nextT = Date.now() + 8000; state = 'paused'; betted = false;
+    function explosion() {
+        startT = 0; nextT = Date.now() + 6000; betted = false;
         document.getElementById('mult-val').innerText = crashP.toFixed(2) + 'x';
-        document.getElementById('bm').style.left = document.getElementById('cw').style.left;
-        document.getElementById('bm').style.display = 'block';
-        document.getElementById('cw').style.opacity = '0';
-        await sb.from('GameHistory').insert([{ crash_point: crashP }]); sync();
+        document.getElementById('mult-val').style.color = 'var(--error)';
+        sb.from('GameHistory').insert([{ crash_point: crashP }]); sync();
     }
 
     async function doCashout(m) {
         if(cashed || !betted) return;
-        cashed = true; spawnMoney();
+        cashed = true;
         let win = parseFloat(document.getElementById('ba').value) * m;
         user.balance += win; document.getElementById('ub').innerText = user.balance.toFixed(2);
         await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-        updateUI("تم السحب ✅", "btn-wait");
     }
 
     function mainAction() {
-        if(state === 'racing' && betted && !cashed) doCashout(parseFloat(document.getElementById('mult-val').innerText));
-        else if(state === 'waiting' && !betted) {
+        if(state === 'waiting' && !betted) {
             const amt = parseFloat(document.getElementById('ba').value);
-            if(user.balance >= amt && amt > 0) {
+            if(user.balance >= amt) {
                 betted = true; user.balance -= amt;
                 document.getElementById('ub').innerText = user.balance.toFixed(2);
-                updateUI("تم الرهان", "btn-wait");
-            } else alert("الرصيد غير كافٍ");
+                sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
+            }
         }
     }
 
-    function toggleAuto() { autoEnabled = !autoEnabled; const btn = document.getElementById('at'); btn.classList.toggle('active', autoEnabled); btn.innerText = autoEnabled ? "ON" : "OFF"; }
-    function spawnMoney() { for(let i=0; i<8; i++) { const c = document.createElement('div'); c.className = 'coin'; c.innerText = '💰'; c.style.left = (Math.random() * 60 + 20) + '%'; c.style.bottom = '100px'; document.body.appendChild(c); setTimeout(() => c.remove(), 800); } }
-    function updateUI(t, c, s="") { const b = document.getElementById('ab'); b.className = `main-btn ${c}`; b.innerHTML = s ? `${t}<br><small>💰 ${s}</small>` : t; }
-    function resetScene() { document.getElementById('cw').style.left = '0%'; document.getElementById('cw').style.opacity = '1'; document.getElementById('bm').style.display = 'none'; }
-    function logout() { location.reload(); }
-    async function sync() { const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(15); if(data) document.getElementById('history-box').innerHTML = data.map(i => `<div class="hi" style="color:${i.crash_point<2?'#ff4b4b':'#00ff88'}">${i.crash_point.toFixed(2)}x</div>`).join(''); }
+    function resetScene() {
+        document.getElementById('cw').style.left = '0%';
+        document.getElementById('cw').style.opacity = '1';
+        document.getElementById('mult-val').style.color = 'var(--accent)';
+    }
+
+    async function sync() {
+        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(10);
+        if(data) document.getElementById('history-box').innerHTML = data.map(i => `<div class="hi" style="color:${i.crash_point<2?'#ff4b4b':'#00ff88'}">${i.crash_point.toFixed(2)}x</div>`).join('');
+    }
 </script>
 </body>
 </html>
