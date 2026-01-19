@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - نظام التوزيع المطور</title>
+    <title>سباق الهجن Pro - نظام التلقائي</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
@@ -240,30 +240,35 @@
         }
     }
 
-    // الدالة المحدثة بنظام التوزيع الجديد
+    // --- التعديل المطلوب في توزيع الاحتمالات ---
     function getCrash() {
         let r = Math.random() * 100;
 
-        if (r <= 40) {
-            // الفئة الأولى (1.00 - 3.00): نطاق 40%
+        if (r <= 70) {
+            // الفئة الأولى (1.00 إلى 3.00): مساحة 70%
             return parseFloat((1.00 + Math.random() * 2.00).toFixed(2));
         } 
-        else if (r <= 80) {
-            // الفئة الثانية (3.00 - 10.00): نطاق 40%
+        else if (r <= 90) {
+            // الفئة الثانية (3.00 إلى 10.00): من 70.1 إلى 90 (20%)
             return parseFloat((3.01 + Math.random() * 6.99).toFixed(2));
         } 
-        else if (r <= 90) {
-            // الفئة الثالثة (10.00 - 30.00): نطاق 10%
+        else if (r <= 97) {
+            // الفئة الثالثة (10.00 إلى 30.00): من 90.1 إلى 97 (7%)
             return parseFloat((10.01 + Math.random() * 19.99).toFixed(2));
         } 
-        else if (r <= 99.9) {
-            // الفئة الرابعة (30.00 - 100.00): نطاق 9.9%
-            return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
-        } 
-        else {
-            // الفئة الأخيرة (100+): نطاق 0.1%
-            return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
+        else if (r <= 100) {
+            // دمج الفئتين الرابعة والخامسة لضمان تغطية الـ 3% المتبقية
+            let subR = Math.random() * 3; // نطاق الـ 3% الباقية
+            
+            if (subR <= 2.9) {
+                // الفئة الرابعة (30.00 إلى 100.00): مساحة تقارب 2.9% من الـ 3%
+                return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
+            } else {
+                // الفئة الخامسة (100+): مساحة 0.1%
+                return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
+            }
         }
+        return 1.00;
     }
 
     function createDust() {
