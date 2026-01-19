@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - الإصدار المستقر</title>
+    <title>سباق الهجن Pro - الإصدار الاحترافي</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -136,14 +136,27 @@
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
+    // معادلة الاحتمالات الدقيقة المطلوبة
     function generateCrashPoint() {
         const rand = Math.random() * 100;
-        if (rand < 70) return parseFloat((1 + Math.random() * 0.9).toFixed(2));
-        if (rand < 90) return parseFloat((1.9 + Math.random() * 8).toFixed(2));
-        return parseFloat((10 + Math.random() * 90).toFixed(2));
+        if (rand < 70) { 
+            // 70% من 1.00 إلى 2.00
+            return parseFloat((1 + Math.random()).toFixed(2));
+        } else if (rand < 90) { 
+            // 20% من 2.00 إلى 20.00
+            return parseFloat((2 + Math.random() * 18).toFixed(2));
+        } else if (rand < 97) { 
+            // 7% من 20.00 إلى 50.00
+            return parseFloat((20 + Math.random() * 30).toFixed(2));
+        } else if (rand < 99.9) { 
+            // 2.9% من 50.00 إلى 100.00
+            return parseFloat((50 + Math.random() * 50).toFixed(2));
+        } else { 
+            // 0.1% من 100.00 فما فوق
+            return parseFloat((100 + Math.random() * 400).toFixed(2));
+        }
     }
 
-    // توليد غبار كثيف جداً بشكل مستقر
     function createDust() {
         if (state !== 'racing') return;
         const tr = document.getElementById('tr-container');
@@ -235,22 +248,24 @@
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
                     
-                    // تحكم دقيق في موقع الجمل (حد أقصى 75%)
                     let progress = Math.min(el * 10, 75);
                     document.getElementById('cw').style.left = progress + '%';
                     
                     createDust();
                     updateBtnUI();
 
-                    if(betted && !cashed && document.getElementById('auto-cash-toggle').checked) {
-                        if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
+                    // منطق السحب التلقائي المرتبط بالزر
+                    const autoEnabled = document.getElementById('auto-cash-toggle').checked;
+                    if(betted && !cashed && autoEnabled) {
+                        const target = parseFloat(document.getElementById('av').value);
+                        if(currentMult >= target) doCashout();
                     }
                 }
             } else { 
                 crashP = generateCrashPoint();
                 startT = Date.now(); cashed = false; 
             }
-        }, 60); // زيادة المهلة قليلاً لتحقيق استقرار المعالج
+        }, 60);
     }
 
     function updateBtnUI() {
