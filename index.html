@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - الإصدار المتطور</title>
+    <title>سباق الهجن Pro - السرعة القصوى</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -25,22 +25,26 @@
         #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
         #mult-val { font-size: 60px; font-weight: 900; transition: transform 0.2s; z-index: 20; }
         
-        /* أنيميشن الانفجار */
         .exp-particle { position: absolute; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; pointer-events: none; z-index: 15; animation: explodeOut 0.6s ease-out forwards; }
         @keyframes explodeOut { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
         
         .crash-anim { transform: scale(1.3); color: var(--error) !important; animation: shake 0.2s infinite; }
         @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, -2px); } }
 
+        /* المضمار مع تأثير السرعة الجنونية */
         .track { height: 140px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
-        .moving-bg { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%); background-size: 200% 100%; animation: moveGround 2s linear infinite; display: none; }
+        .moving-bg { position: absolute; inset: 0; 
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%),
+                        repeating-linear-gradient(90deg, #0d1117 0, #0d1117 40px, #1a1a1a 41px, #1a1a1a 42px);
+            background-size: 200% 100%; animation: moveGround 0.3s linear infinite; display: none; }
         @keyframes moveGround { from { background-position: 200% 0; } to { background-position: 0% 0; } }
         
-        .dust { position: absolute; background: rgba(194, 153, 111, 0.7); border-radius: 50%; pointer-events: none; filter: blur(5px); z-index: 4; animation: dustFade 0.8s forwards; }
-        @keyframes dustFade { 0% { transform: scale(0.5) translate(0,0); opacity: 0.8; } 100% { transform: scale(3) translate(-50px, -20px); opacity: 0; } }
+        /* غبار كثيف جداً */
+        .dust { position: absolute; background: rgba(139, 103, 66, 0.8); border-radius: 50%; pointer-events: none; filter: blur(8px); z-index: 4; animation: dustFade 0.6s forwards; }
+        @keyframes dustFade { 0% { transform: scale(1) translate(0,0); opacity: 0.9; } 100% { transform: scale(4) translate(-100px, -30px); opacity: 0; } }
 
         .camel-wrap { position: absolute; bottom: 15px; left: 0; transition: left 0.1s linear; z-index: 5; }
-        .camel { font-size: 55px; transform: scaleX(-1); }
+        .camel { font-size: 55px; transform: scaleX(-1); filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
 
         .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; z-index: 10; }
         .input-group { display: flex; gap: 5px; margin-bottom: 10px; align-items: flex-end; }
@@ -143,34 +147,33 @@
         return parseFloat((100 + Math.random() * 400).toFixed(2));
     }
 
+    // غبار كثيف جداً جداً
     function createDustParticles() {
         const tr = document.getElementById('tr-container');
         const cw = document.getElementById('cw');
         const rect = cw.getBoundingClientRect();
         const trRect = tr.getBoundingClientRect();
-        for(let i=0; i<3; i++) {
+        for(let i=0; i<8; i++) { // زيادة العدد ليكون كثيفاً جداً
             const d = document.createElement('div');
             d.className = 'dust';
-            d.style.left = (rect.left - trRect.left + 20) + 'px';
-            d.style.bottom = (Math.random() * 15 + 15) + 'px';
+            d.style.left = (rect.left - trRect.left + 15) + 'px';
+            d.style.bottom = (Math.random() * 25 + 10) + 'px';
+            const sz = Math.random() * 20 + 10;
+            d.style.width = sz + 'px'; d.style.height = sz + 'px';
             tr.appendChild(d);
-            setTimeout(() => d.remove(), 800);
+            setTimeout(() => d.remove(), 600);
         }
     }
 
-    // انيميشن الانفجار البصري
     function triggerVisualExplosion() {
         const zone = document.getElementById('display-zone');
         const app = document.getElementById('main-app');
-        
-        // اهتزاز الشاشة
-        app.style.transform = "scale(0.98)";
+        app.style.transform = "scale(0.96)";
         setTimeout(() => app.style.transform = "scale(1)", 100);
-
-        for(let i=0; i<12; i++) {
+        for(let i=0; i<15; i++) {
             const p = document.createElement('div');
             p.className = 'exp-particle';
-            p.style.width = '20px'; p.style.height = '20px';
+            p.style.width = '30px'; p.style.height = '30px';
             p.style.left = '50%'; p.style.top = '50%';
             zone.appendChild(p);
             setTimeout(() => p.remove(), 600);
@@ -223,7 +226,7 @@
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
                 document.getElementById('bg-move').style.display = 'none';
-                document.getElementById('cw').style.display = 'block'; // اظهر الجمل للانتظار
+                document.getElementById('cw').style.display = 'block';
                 updateBtnUI(); resetScene();
             } else if (startT > 0) {
                 state = 'racing';
@@ -238,7 +241,11 @@
                     document.getElementById('timer-val').style.display = 'none';
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
-                    document.getElementById('cw').style.left = Math.min(el * 5, 85) + '%';
+                    
+                    // الجمل يصل لـ 75% فقط كحد أقصى
+                    let pos = Math.min(el * 8, 75); 
+                    document.getElementById('cw').style.left = pos + '%';
+                    
                     createDustParticles();
                     updateBtnUI();
                     if(betted && !cashed && autoToggle.checked) {
@@ -278,17 +285,13 @@
     async function explosion() {
         state = 'paused';
         document.getElementById('bg-move').style.display = 'none';
-        document.getElementById('cw').style.display = 'none'; // اختفاء الجمل عند الانفجار
-        
-        triggerVisualExplosion(); // تشغيل الانفجار البصري
-
+        document.getElementById('cw').style.display = 'none';
+        triggerVisualExplosion();
         const mv = document.getElementById('mult-val');
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.classList.add('crash-anim');
-        
         await sb.from('GameHistory').insert([{ crash_point: crashP }]);
         sync();
-        
         setTimeout(() => {
             state = 'waiting'; startT = 0; betted = false;
             nextT = Date.now() + 5000;
