@@ -240,35 +240,30 @@
         }
     }
 
-    // --- التعديل المطلوب في توزيع الاحتمالات ---
+    // --- تعديل توزيع الاحتمالات حسب طلبك ---
     function getCrash() {
         let r = Math.random() * 100;
 
-        if (r <= 70) {
-            // الفئة الأولى (1.00 إلى 3.00): مساحة 70%
-            return parseFloat((1.00 + Math.random() * 2.00).toFixed(2));
+        if (r <= 50) {
+            // الفئة الأولى (1.00 إلى 2.00): 50%
+            return parseFloat((1.00 + Math.random() * 1.00).toFixed(2));
+        } 
+        else if (r <= 80) {
+            // الفئة الثانية (2.00 إلى 10.00): 30% (من 50.1 إلى 80)
+            return parseFloat((2.01 + Math.random() * 7.99).toFixed(2));
         } 
         else if (r <= 90) {
-            // الفئة الثانية (3.00 إلى 10.00): من 70.1 إلى 90 (20%)
-            return parseFloat((3.01 + Math.random() * 6.99).toFixed(2));
-        } 
-        else if (r <= 97) {
-            // الفئة الثالثة (10.00 إلى 30.00): من 90.1 إلى 97 (7%)
+            // الفئة الثالثة (10.00 إلى 30.00): 10% (من 80.1 إلى 90)
             return parseFloat((10.01 + Math.random() * 19.99).toFixed(2));
         } 
-        else if (r <= 100) {
-            // دمج الفئتين الرابعة والخامسة لضمان تغطية الـ 3% المتبقية
-            let subR = Math.random() * 3; // نطاق الـ 3% الباقية
-            
-            if (subR <= 2.9) {
-                // الفئة الرابعة (30.00 إلى 100.00): مساحة تقارب 2.9% من الـ 3%
-                return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
-            } else {
-                // الفئة الخامسة (100+): مساحة 0.1%
-                return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
-            }
+        else if (r <= 99.1) {
+            // الفئة الرابعة (30.00 إلى 100.00): 9.1% (من 90.1 إلى 99.1)
+            return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
         }
-        return 1.00;
+        else {
+            // الفئة الأخيرة (100.00 فما فوق): 0.9%
+            return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
+        }
     }
 
     function createDust() {
