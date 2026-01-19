@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - الإصدار المصلح</title>
+    <title>سباق الهجن Pro - مصلح مع خاصية التوقف</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -12,20 +12,20 @@
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 15px; border-radius: 25px; border: 1px solid #2d333b; position: relative; display: flex; flex-direction: column; }
         
-        /* Auth Overlay */
         #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 25px; border-radius: 25px; }
         .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 15px; padding: 5px; }
         .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #666; }
         .auth-tab.active { background: var(--card); color: var(--accent); }
 
-        /* UI Elements */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; }
         .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; color: var(--gold); font-weight: bold; }
         .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-left: 8px; }
         
         #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
-        #mult-val { font-size: 60px; font-weight: 900; }
+        #mult-val { font-size: 60px; font-weight: 900; transition: transform 0.2s; }
+        .crash-anim { transform: scale(1.2); animation: flash 0.5s infinite; }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .track { height: 130px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
         .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; z-index: 5; }
@@ -154,11 +154,16 @@
     function engine() {
         setInterval(() => {
             const now = Date.now();
+            
+            // وضعية الـ Pause بعد الانفجار
+            if (state === 'paused') return;
+
             if(now < nextT) {
                 state = 'waiting';
                 document.getElementById('timer-val').innerText = Math.ceil((nextT - now)/1000);
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
+                document.getElementById('mult-val').classList.remove('crash-anim');
                 updateBtnUI(); resetScene();
             } else if (startT > 0) {
                 state = 'racing';
@@ -171,7 +176,6 @@
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
                     document.getElementById('cw').style.left = Math.min(el * 5, 80) + '%';
                     updateBtnUI();
-                    // Auto Cashout
                     if(betted && !cashed && currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
                 }
             } else { 
@@ -191,6 +195,8 @@
                 let pot = (currentMult * parseFloat(document.getElementById('ba').value)).toFixed(2);
                 btn.innerText = `سحب ${pot}`; btn.className = "main-btn btn-cash";
             } else { btn.innerText = "انتظر الجولة التالية"; btn.className = "main-btn btn-wait"; }
+        } else if (state === 'paused') {
+            btn.innerText = "انفجر الجمل!"; btn.className = "main-btn btn-wait";
         }
     }
 
@@ -205,12 +211,23 @@
     }
 
     function explosion() {
-        startT = 0; nextT = Date.now() + 5000;
+        state = 'paused'; // تفعيل حالة التوقف
+        startT = 0;
         const mv = document.getElementById('mult-val');
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
+        mv.classList.add('crash-anim'); // إضافة حركة اهتزاز
+        
+        updateBtnUI();
         sb.from('GameHistory').insert([{ crash_point: crashP }]);
         sync();
+
+        // الانتظار لمدة 3 ثوانٍ قبل العودة للعد التنازلي
+        setTimeout(() => {
+            state = 'waiting';
+            nextT = Date.now() + 5000;
+            betted = false;
+        }, 3000);
     }
 
     async function mainAction() {
