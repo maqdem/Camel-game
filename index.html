@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سباق الهجن Pro - نظام التلقائي</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b141a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3504/3504491.png">
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
@@ -114,6 +121,13 @@
 </div>
 
 <script>
+    // تفعيل الـ Service Worker لـ PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
     const sb = supabase.createClient(SB_URL, SB_KEY);
@@ -240,28 +254,22 @@
         }
     }
 
-    // --- تعديل توزيع الاحتمالات حسب طلبك ---
     function getCrash() {
         let r = Math.random() * 100;
 
         if (r <= 50) {
-            // الفئة الأولى (1.00 إلى 2.00): 50%
             return parseFloat((1.00 + Math.random() * 1.00).toFixed(2));
         } 
         else if (r <= 80) {
-            // الفئة الثانية (2.00 إلى 10.00): 30% (من 50.1 إلى 80)
             return parseFloat((2.01 + Math.random() * 7.99).toFixed(2));
         } 
         else if (r <= 90) {
-            // الفئة الثالثة (10.00 إلى 30.00): 10% (من 80.1 إلى 90)
             return parseFloat((10.01 + Math.random() * 19.99).toFixed(2));
         } 
         else if (r <= 99.1) {
-            // الفئة الرابعة (30.00 إلى 100.00): 9.1% (من 90.1 إلى 99.1)
             return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
         }
         else {
-            // الفئة الأخيرة (100.00 فما فوق): 0.9%
             return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
         }
     }
