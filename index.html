@@ -10,7 +10,7 @@
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 15px; border-radius: 25px; border: 1px solid #2d333b; position: relative; display: flex; flex-direction: column; z-index: 100; }
+        .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 15px; border-radius: 25px; border: 1px solid #2d333b; position: relative; display: flex; flex-direction: column; z-index: 100; transition: transform 0.1s; }
         
         #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 25px; border-radius: 25px; }
         .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 15px; padding: 5px; }
@@ -21,18 +21,21 @@
         .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; color: var(--gold); font-weight: bold; }
         .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-left: 8px; }
         
-        #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; position: relative; }
         #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
-        #mult-val { font-size: 60px; font-weight: 900; transition: transform 0.2s; }
-        .crash-anim { transform: scale(1.2); animation: flash 0.5s infinite; }
-        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        #mult-val { font-size: 60px; font-weight: 900; transition: transform 0.2s; z-index: 20; }
+        
+        /* أنيميشن الانفجار */
+        .exp-particle { position: absolute; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; pointer-events: none; z-index: 15; animation: explodeOut 0.6s ease-out forwards; }
+        @keyframes explodeOut { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
+        
+        .crash-anim { transform: scale(1.3); color: var(--error) !important; animation: shake 0.2s infinite; }
+        @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, -2px); } }
 
-        /* المضمار مع الخلفية المتحركة */
         .track { height: 140px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
         .moving-bg { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%); background-size: 200% 100%; animation: moveGround 2s linear infinite; display: none; }
         @keyframes moveGround { from { background-position: 200% 0; } to { background-position: 0% 0; } }
         
-        /* الغبار */
         .dust { position: absolute; background: rgba(194, 153, 111, 0.7); border-radius: 50%; pointer-events: none; filter: blur(5px); z-index: 4; animation: dustFade 0.8s forwards; }
         @keyframes dustFade { 0% { transform: scale(0.5) translate(0,0); opacity: 0.8; } 100% { transform: scale(3) translate(-50px, -20px); opacity: 0; } }
 
@@ -52,7 +55,6 @@
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(20px); }
-        input:disabled + .slider { opacity: 0.3; cursor: not-allowed; }
 
         .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
@@ -69,7 +71,7 @@
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-container" id="main-app">
     <div id="auth-overlay">
         <h2 style="text-align:center; color: var(--gold); margin-bottom: 20px;">🐪 سباق الهجن PRO</h2>
         <div class="auth-tabs">
@@ -83,14 +85,8 @@
     </div>
 
     <div class="header">
-        <div class="user-section">
-            <button onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">خروج</button>
-            <span id="un" style="font-weight:bold; color:var(--accent); margin-right:5px">...</span>
-        </div>
-        <div style="display: flex; align-items: center;">
-            <button class="btn-deposit" onclick="openDeposit()">+</button>
-            <div class="balance-box">💰 <span id="ub">0.00</span></div>
-        </div>
+        <div class="user-section"><button onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">خروج</button><span id="un" style="font-weight:bold; color:var(--accent); margin-right:5px">...</span></div>
+        <div style="display: flex; align-items: center;"><button class="btn-deposit" onclick="openDeposit()">+</button><div class="balance-box">💰 <span id="ub">0.00</span></div></div>
     </div>
 
     <div id="display-zone">
@@ -109,17 +105,14 @@
             <div class="field"><label>هدف تلقائي</label><input type="number" id="av" value="2.00"></div>
             <div class="auto-switch-wrap">
                 <label style="font-size: 8px; color: var(--accent);">سحب آلي</label>
-                <label class="switch">
-                    <input type="checkbox" id="auto-cash-toggle">
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="auto-cash-toggle"><span class="slider"></span></label>
             </div>
         </div>
         <button id="ab" class="main-btn btn-bet" onclick="mainAction()">وضع رهان</button>
     </div>
 
     <div id="history-box"></div>
-    <div class="ref-section" id="ref-ui">كود الإحالة: <b id="my-ref-code" style="color:var(--gold)">---</b></div>
+    <div class="ref-section">كود الإحالة: <b id="my-ref-code" style="color:var(--gold)">---</b></div>
 </div>
 
 <div id="deposit-modal" class="modal">
@@ -150,23 +143,37 @@
         return parseFloat((100 + Math.random() * 400).toFixed(2));
     }
 
-    // وظيفة الغبار الكثيف جداً
     function createDustParticles() {
         const tr = document.getElementById('tr-container');
         const cw = document.getElementById('cw');
         const rect = cw.getBoundingClientRect();
         const trRect = tr.getBoundingClientRect();
-        
-        for(let i=0; i<4; i++) { // توليد 4 جزيئات في كل دورة لزيادة الكثافة
+        for(let i=0; i<3; i++) {
             const d = document.createElement('div');
             d.className = 'dust';
             d.style.left = (rect.left - trRect.left + 20) + 'px';
-            d.style.bottom = (Math.random() * 20 + 15) + 'px';
-            const size = Math.random() * 15 + 5;
-            d.style.width = size + 'px';
-            d.style.height = size + 'px';
+            d.style.bottom = (Math.random() * 15 + 15) + 'px';
             tr.appendChild(d);
             setTimeout(() => d.remove(), 800);
+        }
+    }
+
+    // انيميشن الانفجار البصري
+    function triggerVisualExplosion() {
+        const zone = document.getElementById('display-zone');
+        const app = document.getElementById('main-app');
+        
+        // اهتزاز الشاشة
+        app.style.transform = "scale(0.98)";
+        setTimeout(() => app.style.transform = "scale(1)", 100);
+
+        for(let i=0; i<12; i++) {
+            const p = document.createElement('div');
+            p.className = 'exp-particle';
+            p.style.width = '20px'; p.style.height = '20px';
+            p.style.left = '50%'; p.style.top = '50%';
+            zone.appendChild(p);
+            setTimeout(() => p.remove(), 600);
         }
     }
 
@@ -216,6 +223,7 @@
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
                 document.getElementById('bg-move').style.display = 'none';
+                document.getElementById('cw').style.display = 'block'; // اظهر الجمل للانتظار
                 updateBtnUI(); resetScene();
             } else if (startT > 0) {
                 state = 'racing';
@@ -230,11 +238,8 @@
                     document.getElementById('timer-val').style.display = 'none';
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
-                    
-                    // تحديد المسار: الجمل يصل إلى 85% فقط
                     document.getElementById('cw').style.left = Math.min(el * 5, 85) + '%';
-                    
-                    createDustParticles(); // تفعيل الغبار
+                    createDustParticles();
                     updateBtnUI();
                     if(betted && !cashed && autoToggle.checked) {
                         if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
@@ -273,16 +278,21 @@
     async function explosion() {
         state = 'paused';
         document.getElementById('bg-move').style.display = 'none';
+        document.getElementById('cw').style.display = 'none'; // اختفاء الجمل عند الانفجار
+        
+        triggerVisualExplosion(); // تشغيل الانفجار البصري
+
         const mv = document.getElementById('mult-val');
         mv.innerText = crashP.toFixed(2) + 'x';
-        mv.style.color = 'var(--error)';
         mv.classList.add('crash-anim');
+        
         await sb.from('GameHistory').insert([{ crash_point: crashP }]);
         sync();
+        
         setTimeout(() => {
             state = 'waiting'; startT = 0; betted = false;
             nextT = Date.now() + 5000;
-            mv.style.color = 'white'; mv.classList.remove('crash-anim');
+            mv.classList.remove('crash-anim');
         }, 3000);
     }
 
