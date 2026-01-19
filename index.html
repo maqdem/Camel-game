@@ -42,7 +42,6 @@
         .btn-cash { background: var(--error); color: white; }
         .btn-wait { background: #222; color: #555; cursor: not-allowed; }
 
-        /* Tabs System */
         .tabs-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0d1117; border-radius: 15px; border: 1px solid #333; }
         .tab-headers { display: flex; border-bottom: 1px solid #222; }
         .tab-h { flex: 1; padding: 10px; text-align: center; font-size: 11px; cursor: pointer; color: #666; font-weight: bold; }
@@ -149,13 +148,26 @@
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
+    // --- تحديث مبدأ ظهور المضاعفات بناءً على طلبك بدقة ---
     function generateCrashPoint() {
         const rand = Math.random() * 100;
-        if (rand < 50) return parseFloat((1 + Math.random() * 1).toFixed(2));
-        if (rand < 80) return parseFloat((2 + Math.random() * 3).toFixed(2));
-        if (rand < 95) return parseFloat((5 + Math.random() * 25).toFixed(2));
-        if (rand < 99.9) return parseFloat((30 + Math.random() * 70).toFixed(2));
-        return parseFloat((100 + Math.random() * 900).toFixed(2));
+        
+        if (rand < 80) { 
+            // من 1.00 الى 2.00 بنسبة 80%
+            return parseFloat((1 + Math.random() * 1).toFixed(2)); 
+        } else if (rand < 90) { 
+            // من 2.00 الى 4.00 بنسبة 10%
+            return parseFloat((2 + Math.random() * 2).toFixed(2)); 
+        } else if (rand < 95) { 
+            // من 4.00 الى 10.00 بنسبة 5%
+            return parseFloat((4 + Math.random() * 6).toFixed(2)); 
+        } else if (rand < 99.9) { 
+            // من 10.00 الى 50.00 بنسبة 4.9%
+            return parseFloat((10 + Math.random() * 40).toFixed(2)); 
+        } else { 
+            // من 50.00+ بنسبة 0.1%
+            return parseFloat((50 + Math.random() * 200).toFixed(2)); 
+        }
     }
 
     function toggleControls(lock) {
@@ -211,7 +223,6 @@
                 toggleControls(true);
                 document.getElementById('ub').innerText = user.balance.toFixed(2);
                 await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-                // تسجيل رهان مبدئي
                 await sb.from('UserBets').insert([{ user_id: user.id, bet_amount: amt, status: 'pending' }]);
                 updateBtnUI();
             } else { alert("الرصيد غير كافٍ"); }
@@ -253,7 +264,6 @@
         }, 2500);
     }
 
-    // Helper Functions
     function showTab(tid) {
         document.querySelectorAll('.tab-body').forEach(b => b.style.display = 'none');
         document.querySelectorAll('.tab-h').forEach(h => h.classList.remove('active'));
@@ -284,7 +294,6 @@
         }
     }
 
-    // UI & Auth (بقيت كما هي بدقة)
     function createDust() {
         const d = document.createElement('div'); d.className = 'dust';
         d.style.left = (document.getElementById('cw').offsetLeft + 10) + 'px';
@@ -319,42 +328,4 @@
                 const { data, error } = await sb.auth.signUp({ email, password: p });
                 if(error) throw error;
                 const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
-                await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
-                alert("تم التسجيل! سجل دخولك الآن."); switchAuth('login');
-            } else {
-                const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
-                if(error) throw error;
-                const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
-                user = pr; startApp();
-            }
-        } catch(e) { alert(e.message); }
-    }
-
-    function startApp() {
-        document.getElementById('auth-overlay').style.display = 'none';
-        document.getElementById('un').innerText = user.username;
-        document.getElementById('ub').innerText = user.balance.toFixed(2);
-        document.getElementById('my-ref-code').innerText = user.referral_code;
-        engine(); sync(); syncMyBets();
-    }
-
-    async function submitDeposit() {
-        const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("املأ البيانات");
-        await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
-        alert("تم الإرسال للمراجعة"); closeModal('deposit-modal');
-    }
-
-    async function submitWithdraw() {
-        const a = document.getElementById('wa').value, m = parseFloat(document.getElementById('wam').value);
-        if(!a || m < 10) return alert("الحد الأدنى للسحب 10 USDT");
-        if(user.balance < m) return alert("رصيد غير كافٍ");
-        user.balance -= m;
-        await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-        await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: a }]);
-        document.getElementById('ub').innerText = user.balance.toFixed(2);
-        alert("تم تقديم طلب السحب"); closeModal('withdraw-modal');
-    }
-</script>
-</body>
-</html>
+                await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, re
