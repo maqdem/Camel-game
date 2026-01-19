@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - الإصدار الكامل</title>
+    <title>Camel Race Pro - Full Edition</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b141a">
@@ -26,7 +26,7 @@
         /* UI Elements */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; }
         .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; color: var(--gold); font-weight: bold; }
-        .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-left: 8px; }
+        .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-right: 8px; }
         
         #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
@@ -61,25 +61,25 @@
 
 <div class="app-container">
     <div id="auth-overlay">
-        <h2 style="text-align:center; color: var(--gold); margin-bottom: 20px;">🐪 سباق الهجن PRO</h2>
+        <h2 style="text-align:center; color: var(--gold); margin-bottom: 20px;">🐪 CAMEL RACE PRO</h2>
         <div class="auth-tabs">
-            <div id="tb-login" class="auth-tab active" onclick="switchAuth('login')">دخول</div>
-            <div id="tb-signup" class="auth-tab" onclick="switchAuth('signup')">تسجيل</div>
+            <div id="tb-login" class="auth-tab active" onclick="switchAuth('login')">Login</div>
+            <div id="tb-signup" class="auth-tab" onclick="switchAuth('signup')">Register</div>
         </div>
-        <input type="text" id="ui" placeholder="اسم المستخدم" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
-        <input type="password" id="pi" placeholder="كلمة المرور" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
-        <input type="text" id="ri" placeholder="كود الإحالة (اختياري)" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:20px; text-align:center">
-        <button id="auth-bt" class="main-btn btn-bet" onclick="handleAuth()">دخول</button>
+        <input type="text" id="ui" placeholder="Username" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
+        <input type="password" id="pi" placeholder="Password" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
+        <input type="text" id="ri" placeholder="Referral Code (Optional)" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:20px; text-align:center">
+        <button id="auth-bt" class="main-btn btn-bet" onclick="handleAuth()">Login</button>
     </div>
 
     <div class="header">
         <div class="user-section">
-            <button class="logout-btn" onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">خروج</button>
-            <span id="un" style="font-weight:bold; color:var(--accent); cursor:pointer; margin-right:5px">...</span>
+            <button class="logout-btn" onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">Logout</button>
+            <span id="un" style="font-weight:bold; color:var(--accent); cursor:pointer; margin-left:5px">...</span>
         </div>
         <div style="display: flex; align-items: center;">
-            <button class="btn-deposit" onclick="openDeposit()">+</button>
             <div class="balance-box">💰 <span id="ub">0.00</span></div>
+            <button class="btn-deposit" onclick="openDeposit()">+</button>
         </div>
     </div>
 
@@ -95,30 +95,30 @@
 
     <div class="controls">
         <div class="input-group">
-            <div class="field"><label>الرهان</label><input type="number" id="ba" value="10"></div>
-            <div class="field"><label>هدف تلقائي</label><input type="number" id="av" value="2.00"></div>
+            <div class="field"><label>Bet Amount</label><input type="number" id="ba" value="10"></div>
+            <div class="field"><label>Auto Cashout</label><input type="number" id="av" value="2.00"></div>
         </div>
-        <button id="ab" class="main-btn btn-bet" onclick="mainAction()">وضع رهان</button>
+        <button id="ab" class="main-btn btn-bet" onclick="mainAction()">Place Bet</button>
     </div>
 
     <div id="history-box"></div>
     
     <div class="ref-section" id="ref-ui">
-        كود الإحالة الخاص بك: <b id="my-ref-code" style="color:var(--gold)">---</b>
+        Your Referral Code: <b id="my-ref-code" style="color:var(--gold)">---</b>
     </div>
 </div>
 
 <div id="deposit-modal" class="modal">
     <div class="modal-content">
-        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">إيداع USDT (TRC20)</h3>
-        <p style="font-size:10px; color:#aaa; text-align:center; margin-bottom:10px;">حول المبلغ للعنوان التالي:</p>
+        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">Deposit USDT (TRC20)</h3>
+        <p style="font-size:10px; color:#aaa; text-align:center; margin-bottom:10px;">Send amount to this address:</p>
         <div style="background:#0d1117; padding:10px; border-radius:8px; word-break:break-all; color:var(--accent); font-size:11px; text-align:center; margin-bottom:15px; border:1px solid #333;">
             TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg
         </div>
-        <input type="text" id="tx-hash" placeholder="رقم العملية (Hash)" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
-        <input type="number" id="dep-amount" placeholder="المبلغ" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
-        <button class="main-btn btn-bet" style="font-size:16px; padding:12px;" onclick="submitDeposit()">تأكيد الإرسال</button>
-        <button onclick="closeDeposit()" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer; font-size:12px;">إلغاء</button>
+        <input type="text" id="tx-hash" placeholder="Transaction Hash" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
+        <input type="number" id="dep-amount" placeholder="Amount" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
+        <button class="main-btn btn-bet" style="font-size:16px; padding:12px;" onclick="submitDeposit()">Confirm Transfer</button>
+        <button onclick="closeDeposit()" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer; font-size:12px;">Cancel</button>
     </div>
 </div>
 
@@ -134,24 +134,23 @@
         mode = m;
         document.getElementById('tb-login').classList.toggle('active', m==='login');
         document.getElementById('tb-signup').classList.toggle('active', m==='signup');
-        document.getElementById('auth-bt').innerText = m==='login' ? 'دخول' : 'إنشاء حساب';
+        document.getElementById('auth-bt').innerText = m==='login' ? 'Login' : 'Register';
     }
 
     async function handleAuth() {
         const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
-        if(!u || p.length < 6) return alert("البيانات غير صالحة");
+        if(!u || p.length < 6) return alert("Invalid inputs");
         const email = `${u.trim()}@camel.com`;
 
         if(mode === 'signup') {
             const { data, error } = await sb.auth.signUp({ email, password: p });
-            if(error) return alert("خطأ: " + error.message);
-            // إنشاء بروفايل مع كود إحالة عشوائي
+            if(error) return alert("Error: " + error.message);
             const refCode = Math.random().toString(36).substring(2, 7).toUpperCase();
             await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: refCode, referred_by: r || null }]);
-            alert("تم التسجيل! يمكنك الآن الدخول."); switchAuth('login');
+            alert("Registered! Please login."); switchAuth('login');
         } else {
             const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
-            if(error) return alert("فشل الدخول");
+            if(error) return alert("Login failed");
             const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
             user = pr; startApp();
         }
@@ -162,9 +161,9 @@
 
     async function submitDeposit() {
         const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("املأ الحقول");
+        if(!h || !a) return alert("Please fill all fields");
         await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
-        alert("تم إرسال الطلب للمراجعة ✅"); closeDeposit();
+        alert("Request sent for review ✅"); closeDeposit();
     }
 
     function startApp() {
@@ -177,7 +176,7 @@
 
     function getCrash() {
         let r = Math.random() * 100;
-        if (r <= 3) return 1.00; // نسبة ربح للمنصة 3%
+        if (r <= 3) return 1.00; // House edge 3%
         let s = Math.random() * 100;
         if (s <= 60) return parseFloat((1.01 + Math.random() * 0.9).toFixed(2));
         if (s <= 85) return parseFloat((2.00 + Math.random() * 3.0).toFixed(2));
@@ -232,6 +231,8 @@
                 document.getElementById('ub').innerText = user.balance.toFixed(2);
                 sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
             }
+        } else if(state === 'racing' && betted && !cashed) {
+            doCashout(parseFloat(document.getElementById('mult-val').innerText));
         }
     }
 
