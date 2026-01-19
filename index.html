@@ -143,30 +143,25 @@
 <script>
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
+    const SMART_FUNCTION_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co/functions/v1/smart-function";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
-    // --- تحديث مبدأ ظهور المضاعفات بناءً على طلبك بدقة ---
-    function generateCrashPoint() {
-        const rand = Math.random() * 100;
-        
-        if (rand < 80) { 
-            // من 1.00 الى 2.00 بنسبة 80%
-            return parseFloat((1 + Math.random() * 1).toFixed(2)); 
-        } else if (rand < 90) { 
-            // من 2.00 الى 4.00 بنسبة 10%
-            return parseFloat((2 + Math.random() * 2).toFixed(2)); 
-        } else if (rand < 95) { 
-            // من 4.00 الى 10.00 بنسبة 5%
-            return parseFloat((4 + Math.random() * 6).toFixed(2)); 
-        } else if (rand < 99.9) { 
-            // من 10.00 الى 50.00 بنسبة 4.9%
-            return parseFloat((10 + Math.random() * 40).toFixed(2)); 
-        } else { 
-            // من 50.00+ بنسبة 0.1%
-            return parseFloat((50 + Math.random() * 200).toFixed(2)); 
+    // دالة جلب نقطة الانفجار المؤمنة من السيرفر
+    async function fetchCrashPoint() {
+        try {
+            const response = await fetch(SMART_FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            return data.crashPoint;
+        } catch (e) {
+            console.error("خطأ اتصال:", e);
+            // رقم احتياطي في حالة تعطل السيرفر لضمان عدم توقف اللعبة
+            return parseFloat((1 + Math.random() * 0.5).toFixed(2));
         }
     }
 
@@ -177,7 +172,7 @@
     }
 
     function engine() {
-        setInterval(() => {
+        setInterval(async () => {
             const now = Date.now();
             if (state === 'paused') return;
 
@@ -209,7 +204,8 @@
                     }
                 }
             } else { 
-                crashP = generateCrashPoint();
+                // جلب النتيجة من السيرفر قبل بدء السباق
+                crashP = await fetchCrashPoint();
                 startT = Date.now(); cashed = false; 
             }
         }, 60);
@@ -268,7 +264,7 @@
         document.querySelectorAll('.tab-body').forEach(b => b.style.display = 'none');
         document.querySelectorAll('.tab-h').forEach(h => h.classList.remove('active'));
         document.getElementById(tid).style.display = 'block';
-        event.target.classList.add('active');
+        if(event) event.target.classList.add('active');
     }
 
     async function sync() {
@@ -322,6 +318,7 @@
     
     async function handleAuth() {
         const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
+        if(!u || !p) return alert("يرجى إدخال البيانات");
         const email = `${u.trim()}@camel.com`;
         try {
             if(mode === 'signup') {
