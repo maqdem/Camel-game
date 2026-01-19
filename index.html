@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - مصلح مع خاصية التوقف</title>
+    <title>سباق الهجن Pro - الإصدار الكامل المصلح</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -43,8 +43,9 @@
         .btn-wait { background: #222; color: #555; cursor: not-allowed; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 
-        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 60px; overflow-y: auto; margin-top: 5px; }
-        .hi { padding: 3px 8px; border-radius: 5px; font-size: 10px; background: #0d1117; font-weight: bold; border: 1px solid #333; }
+        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 60px; overflow-y: auto; margin-top: 5px; padding: 5px; }
+        .hi { padding: 3px 8px; border-radius: 5px; font-size: 10px; background: #0d1117; font-weight: bold; border: 1px solid #333; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .ref-section { font-size: 11px; text-align: center; margin-top: 10px; color: #888; border-top: 1px solid #333; padding-top: 10px; }
 
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center; padding:20px; }
@@ -154,8 +155,6 @@
     function engine() {
         setInterval(() => {
             const now = Date.now();
-            
-            // وضعية الـ Pause بعد الانفجار
             if (state === 'paused') return;
 
             if(now < nextT) {
@@ -210,19 +209,24 @@
         await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
     }
 
-    function explosion() {
-        state = 'paused'; // تفعيل حالة التوقف
+    // تم تعديل هذه الدالة لإصلاح مشكلة الـ History
+    async function explosion() {
+        state = 'paused';
         startT = 0;
         const mv = document.getElementById('mult-val');
-        mv.innerText = crashP.toFixed(2) + 'x';
+        const finalPoint = crashP; // حفظ القيمة النهائية
+        mv.innerText = finalPoint.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
-        mv.classList.add('crash-anim'); // إضافة حركة اهتزاز
+        mv.classList.add('crash-anim');
         
         updateBtnUI();
-        sb.from('GameHistory').insert([{ crash_point: crashP }]);
-        sync();
+        
+        // 1. إرسال النتيجة وانتظار التأكيد
+        await sb.from('GameHistory').insert([{ crash_point: finalPoint }]);
+        
+        // 2. تحديث السجل فوراً بعد الحفظ
+        await sync();
 
-        // الانتظار لمدة 3 ثوانٍ قبل العودة للعد التنازلي
         setTimeout(() => {
             state = 'waiting';
             nextT = Date.now() + 5000;
@@ -251,8 +255,12 @@
     }
 
     async function sync() {
-        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(15);
-        if(data) document.getElementById('history-box').innerHTML = data.map(i => `<div class="hi" style="color:${i.crash_point<2?'#ff4b4b':'#00ff88'}">${i.crash_point.toFixed(2)}x</div>`).join('');
+        const { data, error } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(15);
+        if(data && !error) {
+            document.getElementById('history-box').innerHTML = data.map(i => 
+                `<div class="hi" style="color:${i.crash_point < 2 ? '#ff4b4b' : '#00ff88'}">${i.crash_point.toFixed(2)}x</div>`
+            ).join('');
+        }
     }
 
     function openDeposit() { document.getElementById('deposit-modal').style.display = 'flex'; }
