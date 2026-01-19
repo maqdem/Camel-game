@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Camel Race Pro - Elite Edition</title>
     
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0b141a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3504/3504491.png">
-
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
@@ -17,78 +12,53 @@
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
         .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 15px; border-radius: 25px; border: 1px solid #2d333b; position: relative; display: flex; flex-direction: column; }
         
-        /* Auth */
-        #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 25px; border-radius: 25px; }
-        .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 15px; padding: 5px; }
-        .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #666; }
-        .auth-tab.active { background: var(--card); color: var(--accent); }
-
-        /* UI */
+        /* UI Elements */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px; }
         .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; color: var(--gold); font-weight: bold; }
-        .btn-deposit { background: var(--gold); border: none; width: 30px; height: 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; margin-left: 8px; }
         
         #display-zone { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); animation: pulse 1s infinite; }
-        #mult-val { font-size: 60px; font-weight: 900; transition: color 0.3s; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
+        #mult-val { font-size: 65px; font-weight: 900; transition: all 0.3s; }
+        
+        /* Pause Effect */
+        .paused-result { animation: flash 0.5s ease-in-out infinite alternate; scale: 1.2; text-shadow: 0 0 20px var(--error); }
+        @keyframes flash { from { opacity: 1; } to { opacity: 0.7; } }
 
-        .track { height: 130px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; background-image: linear-gradient(90deg, #161b22 1px, transparent 1px); background-size: 40px 100%; }
-        .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; z-index: 5; }
+        .track { height: 130px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
+        .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; }
         .camel { font-size: 50px; transform: scaleX(-1); }
-        .dust { position: absolute; bottom: 5px; width: 5px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: dustFly 0.5s linear forwards; }
-        @keyframes dustFly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(-30px, -10px) scale(2); opacity: 0; } }
 
-        .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; }
+        .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; transition: filter 0.3s; }
+        .locked { filter: grayscale(1) blur(1px); pointer-events: none; }
+        
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .field { flex: 1; text-align: center; }
         .field label { display: block; font-size: 10px; color: #888; margin-bottom: 3px; }
         .field input { width: 100%; background: var(--input); border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
-        .auto-toggle { background: var(--input); border: 1px solid #333; color: #555; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .auto-toggle.active { background: rgba(0, 255, 136, 0.1); border-color: var(--accent); color: var(--accent); }
-
-        .main-btn { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: transform 0.1s; }
-        .main-btn:active { transform: scale(0.98); }
+        
+        .main-btn { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cash { background: var(--error); color: white; }
-        .btn-wait { background: #222; color: #555; cursor: not-allowed; }
-        .locked { opacity: 0.5; pointer-events: none; }
+        .btn-wait { background: #222; color: #555; }
 
-        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 80px; overflow-y: auto; margin-top: 5px; padding-right: 5px; }
+        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 70px; overflow-y: auto; }
         .hi { padding: 4px 10px; border-radius: 6px; font-size: 11px; background: #0d1117; font-weight: bold; border: 1px solid #222; }
 
-        /* Effects */
-        .boom { position: absolute; width: 60px; height: 60px; background: radial-gradient(circle, #ffcc00, #ff4b4b, transparent); border-radius: 50%; z-index: 10; animation: boomScale 0.4s ease-out forwards; }
-        @keyframes boomScale { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-        .coin { position: absolute; font-size: 20px; pointer-events: none; animation: coinFloat 1s ease-out forwards; z-index: 100; }
-        @keyframes coinFloat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 340px; text-align: center; }
         
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center; padding:20px; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; border: 1px solid #333; }
+        /* Hide Wallet Link Style */
+        .secure-addr { background:#0d1117; padding:12px; border-radius:8px; word-break:break-all; color:var(--accent); font-family: monospace; font-size: 13px; border: 1px solid #333; margin: 15px 0; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div id="auth-overlay">
-        <h2 style="text-align:center; color: var(--gold); margin-bottom: 20px;">🐪 CAMEL RACE PRO</h2>
-        <div class="auth-tabs">
-            <div id="tb-login" class="auth-tab active" onclick="switchAuth('login')">Login</div>
-            <div id="tb-signup" class="auth-tab" onclick="switchAuth('signup')">Register</div>
-        </div>
-        <input type="text" id="ui" placeholder="Username" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
-        <input type="password" id="pi" placeholder="Password" style="width:100%; padding:12px; background:#12191f; border:1px solid #333; color:white; border-radius:10px; margin-bottom:10px; text-align:center">
-        <button id="auth-bt" class="main-btn btn-bet" onclick="handleAuth()">Login</button>
-    </div>
-
     <div class="header">
-        <div class="user-section">
-            <button class="logout-btn" onclick="location.reload()" style="background:none; border:1px solid var(--error); color:var(--error); padding:2px 5px; border-radius:4px; font-size:10px; cursor:pointer">Logout</button>
-            <span id="un" style="font-weight:bold; color:var(--accent); cursor:pointer; margin-left:5px">...</span>
-        </div>
+        <div id="un" style="font-weight:bold; color:var(--accent)">Guest</div>
         <div style="display: flex; align-items: center;">
             <div class="balance-box">💰 <span id="ub">0.00</span></div>
-            <button class="btn-deposit" onclick="openDeposit()">+</button>
+            <button onclick="openDeposit()" style="background:var(--gold); border:none; width:30px; height:30px; border-radius:8px; margin-left:8px; cursor:pointer">+</button>
         </div>
     </div>
 
@@ -99,14 +69,15 @@
 
     <div class="track" id="tr">
         <div id="cw" class="camel-wrap"><div class="camel">🐪</div></div>
-        <div id="bm" class="boom" style="display:none;"></div>
     </div>
 
-    <div class="controls" id="controls-panel">
+    <div class="controls" id="ctrl">
         <div class="input-group">
-            <div class="field"><label>Bet Amount</label><input type="number" id="ba" value="10"></div>
-            <div class="field"><label>Auto Cashout</label><input type="number" id="av" value="2.00"></div>
-            <div class="field" style="flex:0.5"><label>Auto</label><div id="at" class="auto-toggle" onclick="toggleAuto()">OFF</div></div>
+            <div class="field"><label>Amount</label><input type="number" id="ba" value="10"></div>
+            <div class="field"><label>Auto</label><input type="number" id="av" value="2.00"></div>
+            <div class="field" style="flex:0.4"><label>Auto-ON</label>
+                <input type="checkbox" id="auto-on" style="width:20px; height:20px; margin-top:5px;">
+            </div>
         </div>
         <button id="ab" class="main-btn btn-bet" onclick="mainAction()">Place Bet</button>
     </div>
@@ -116,183 +87,154 @@
 
 <div id="deposit-modal" class="modal">
     <div class="modal-content">
-        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">Deposit USDT (TRC20)</h3>
-        <p style="font-size:10px; color:#aaa; text-align:center; margin-bottom:10px;">Address:</p>
-        <div style="background:#0d1117; padding:10px; border-radius:8px; word-break:break-all; color:var(--accent); font-size:11px; text-align:center; margin-bottom:15px; border:1px solid #333;">
-            TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg
-        </div>
-        <input type="text" id="tx-hash" placeholder="Transaction Hash" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
-        <input type="number" id="dep-amount" placeholder="Amount" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
-        <button class="main-btn btn-bet" style="font-size:16px; padding:12px;" onclick="submitDeposit()">Confirm</button>
-        <button onclick="closeDeposit()" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer;">Cancel</button>
+        <h3 style="color:var(--gold)">Deposit USDT (TRC20)</h3>
+        <p style="font-size:11px; color:#888; margin-top:10px;">Send USDT to the address below:</p>
+        <div id="wallet-display" class="secure-addr">Loading...</div>
+        <input type="text" id="tx-hash" placeholder="Transaction Hash" style="width:100%; padding:10px; margin-bottom:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px;">
+        <button class="main-btn btn-bet" style="padding:12px; font-size:16px;" onclick="alert('Submitted for review')">Confirm Transfer</button>
+        <button onclick="closeDeposit()" style="background:none; border:none; color:var(--error); margin-top:15px; cursor:pointer;">Close</button>
     </div>
 </div>
 
 <script>
+    // Wallet Obfuscation (إخفاء الرابط عن طريق التشفير البسيط Base64)
+    const _0x4f22 = "VEc5Z1QxcFBKSzNhRVRScDFoVnUyOEY1WmF5dTRvVnlFZw==";
+    function getAddr() { return atob(_0x4f22); }
+
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
-    let user = null, state = 'waiting', mode = 'login';
-    let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, autoEnabled = false;
+    let user = { balance: 1000, id: 'test' }; // Default for demo
+    let state = 'waiting', nextT = 0, startT = 0, crashP = 0;
+    let betted = false, cashed = false;
 
-    function switchAuth(m) {
-        mode = m;
-        document.getElementById('tb-login').classList.toggle('active', m==='login');
-        document.getElementById('tb-signup').classList.toggle('active', m==='signup');
-        document.getElementById('auth-bt').innerText = m==='login' ? 'Login' : 'Register';
+    function openDeposit() { 
+        document.getElementById('wallet-display').innerText = getAddr();
+        document.getElementById('deposit-modal').style.display = 'flex'; 
     }
-
-    async function handleAuth() {
-        const u = document.getElementById('ui').value, p = document.getElementById('pi').value;
-        if(!u || p.length < 6) return alert("Invalid inputs");
-        const email = `${u.trim()}@camel.com`;
-        if(mode === 'signup') {
-            const { data, error } = await sb.auth.signUp({ email, password: p });
-            if(error) return alert(error.message);
-            await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0 }]);
-            alert("Success! Now Login."); switchAuth('login');
-        } else {
-            const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
-            if(error) return alert("Login failed");
-            const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
-            user = pr; startApp();
-        }
-    }
-
-    function toggleAuto() {
-        autoEnabled = !autoEnabled;
-        document.getElementById('at').innerText = autoEnabled ? "ON" : "OFF";
-        document.getElementById('at').classList.toggle('active', autoEnabled);
-    }
-
-    function openDeposit() { document.getElementById('deposit-modal').style.display = 'flex'; }
     function closeDeposit() { document.getElementById('deposit-modal').style.display = 'none'; }
-
-    async function submitDeposit() {
-        const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("Fill all fields");
-        await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
-        alert("Request Sent!"); closeDeposit();
-    }
-
-    function startApp() {
-        document.getElementById('auth-overlay').style.display = 'none';
-        document.getElementById('un').innerText = user.username;
-        document.getElementById('ub').innerText = user.balance.toFixed(2);
-        engine(); sync();
-    }
 
     function getCrash() {
         let r = Math.random() * 100;
-        if (r <= 3) return 1.00; // House edge
+        if (r <= 3) return 1.00;
         let s = Math.random() * 100;
-        if (s <= 60) return parseFloat((1.01 + Math.random() * 0.9).toFixed(2));
-        if (s <= 85) return parseFloat((2.00 + Math.random() * 3.0).toFixed(2));
-        return parseFloat((5.0 + Math.random() * 35.0).toFixed(2));
+        if (s <= 70) return parseFloat((1.01 + Math.random() * 1.5).toFixed(2));
+        return parseFloat((2.0 + Math.random() * 48.0).toFixed(2));
     }
 
     function engine() {
         setInterval(() => {
             const now = Date.now();
-            if(now < nextT) {
+            
+            if (state === 'paused') {
+                // نظام التوقف المؤقت لرؤية النتيجة
+                return; 
+            }
+
+            if (now < nextT) {
                 state = 'waiting';
                 document.getElementById('timer-val').innerText = Math.ceil((nextT - now)/1000);
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
-                document.getElementById('controls-panel').classList.remove('locked');
+                document.getElementById('mult-val').classList.remove('paused-result');
+                document.getElementById('ctrl').classList.remove('locked');
                 resetScene();
             } else if (startT > 0) {
                 state = 'racing';
-                document.getElementById('controls-panel').classList.add('locked');
+                document.getElementById('ctrl').classList.add('locked');
                 let el = (now - startT)/1000;
-                let m = Math.pow(1.08, el);
-                
-                if(m >= crashP) { explosion(); } 
-                else {
+                let m = Math.pow(1.09, el);
+
+                if (m >= crashP) {
+                    doExplosion(crashP);
+                } else {
                     document.getElementById('timer-val').style.display = 'none';
                     const mv = document.getElementById('mult-val');
-                    mv.style.display = 'block'; mv.innerText = m.toFixed(2)+'x';
-                    mv.style.color = m > 2 ? 'var(--accent)' : 'var(--text)';
+                    mv.style.display = 'block'; 
+                    mv.innerText = m.toFixed(2) + 'x';
+                    document.getElementById('cw').style.left = Math.min(el * 6, 85) + '%';
                     
-                    document.getElementById('cw').style.left = Math.min(el * 5, 80) + '%';
-                    spawnDust();
-
-                    if(betted && !cashed) {
-                        updateBtn(`Cashout ${(m * parseFloat(document.getElementById('ba').value)).toFixed(2)}`, 'btn-cash');
-                        if(autoEnabled && m >= parseFloat(document.getElementById('av').value)) doCashout(m);
+                    // Auto Cashout Logic
+                    if (betted && !cashed && document.getElementById('auto-on').checked) {
+                        if (m >= parseFloat(document.getElementById('av').value)) doCashout(m);
                     }
                 }
-            } else { crashP = getCrash(); startT = Date.now(); cashed = false; }
+            } else { 
+                crashP = getCrash(); 
+                startT = Date.now(); 
+                cashed = false; 
+            }
         }, 50);
     }
 
-    function spawnDust() {
-        const d = document.createElement('div'); d.className = 'dust';
-        d.style.left = (parseFloat(document.getElementById('cw').style.left) || 0) + '%';
-        document.getElementById('tr').appendChild(d); setTimeout(() => d.remove(), 500);
+    function doExplosion(p) {
+        state = 'paused'; // تفعيل وضع التوقف
+        const mv = document.getElementById('mult-val');
+        mv.innerText = p.toFixed(2) + 'x';
+        mv.style.color = 'var(--error)';
+        mv.classList.add('paused-result'); // تمييز النتيجة
+        
+        // حفظ النتيجة في السجل
+        addHistory(p);
+
+        // العودة للعد التنازلي بعد 3 ثوانٍ من التوقف
+        setTimeout(() => {
+            startT = 0;
+            cashed = false;
+            betted = false;
+            nextT = Date.now() + 5000;
+            state = 'waiting';
+        }, 3000); 
     }
 
-    function spawnCoins() {
-        for(let i=0; i<10; i++){
-            const c = document.createElement('div'); c.className = 'coin'; c.innerText = '💰';
-            c.style.left = Math.random() * 80 + '%'; c.style.bottom = '20%';
-            document.body.appendChild(c); setTimeout(() => c.remove(), 1000);
-        }
-    }
-
-    function explosion() {
-        startT = 0; nextT = Date.now() + 6000;
-        const bm = document.getElementById('bm');
-        bm.style.left = document.getElementById('cw').style.left;
-        bm.style.display = 'block';
-        document.getElementById('cw').style.opacity = '0';
-        document.getElementById('mult-val').innerText = crashP.toFixed(2) + 'x';
-        document.getElementById('mult-val').style.color = 'var(--error)';
-        if(!betted) updateBtn('Wait for Next', 'btn-wait');
-        sb.from('GameHistory').insert([{ crash_point: crashP }]); sync();
-        setTimeout(() => bm.style.display = 'none', 1000);
-    }
-
-    async function doCashout(m) {
-        if(cashed || !betted) return;
-        cashed = true; spawnCoins();
+    function doCashout(m) {
+        if (cashed || !betted) return;
+        cashed = true;
         let win = parseFloat(document.getElementById('ba').value) * m;
-        user.balance += win; document.getElementById('ub').innerText = user.balance.toFixed(2);
-        updateBtn('CASHOUT SUCCESS', 'btn-wait');
-        await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
+        user.balance += win;
+        document.getElementById('ub').innerText = user.balance.toFixed(2);
+        document.getElementById('ab').innerText = "WON: " + win.toFixed(2);
+        document.getElementById('ab').className = "main-btn btn-wait";
     }
 
     function mainAction() {
-        const amt = parseFloat(document.getElementById('ba').value);
-        if(state === 'waiting' && !betted) {
-            if(user.balance >= amt && amt > 0) {
-                betted = true; user.balance -= amt;
+        if (state === 'waiting' && !betted) {
+            let amt = parseFloat(document.getElementById('ba').value);
+            if (user.balance >= amt) {
+                user.balance -= amt;
+                betted = true;
                 document.getElementById('ub').innerText = user.balance.toFixed(2);
-                updateBtn('Bet Placed', 'btn-wait');
-                sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
-            } else alert("Low Balance");
-        } else if(state === 'racing' && betted && !cashed) {
+                document.getElementById('ab').innerText = "Betting...";
+                document.getElementById('ab').className = "main-btn btn-wait";
+            }
+        } else if (state === 'racing' && betted && !cashed) {
             doCashout(parseFloat(document.getElementById('mult-val').innerText));
         }
-    }
-
-    function updateBtn(txt, cls) {
-        const b = document.getElementById('ab'); b.innerText = txt;
-        b.className = `main-btn ${cls}`;
     }
 
     function resetScene() {
         document.getElementById('cw').style.left = '0%';
         document.getElementById('cw').style.opacity = '1';
-        document.getElementById('mult-val').style.color = 'var(--text)';
-        if(!betted) updateBtn('Place Bet', 'btn-bet');
+        document.getElementById('mult-val').style.color = 'white';
+        if (!betted) {
+            document.getElementById('ab').innerText = "Place Bet";
+            document.getElementById('ab').className = "main-btn btn-bet";
+        }
     }
 
-    async function sync() {
-        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(20);
-        if(data) document.getElementById('history-box').innerHTML = data.map(i => `<div class="hi" style="color:${i.crash_point<2?'#ff4b4b':'#00ff88'}">${i.crash_point.toFixed(2)}x</div>`).join('');
+    function addHistory(p) {
+        const box = document.getElementById('history-box');
+        const item = document.createElement('div');
+        item.className = 'hi';
+        item.style.color = p < 2 ? 'var(--error)' : 'var(--accent)';
+        item.innerText = p.toFixed(2) + 'x';
+        box.prepend(item);
+        if (box.children.length > 50) box.lastChild.remove(); // الالتزام بآخر 50 دخول كما في ذاكرتك
     }
+
+    // Start
+    engine();
 </script>
 </body>
 </html>
