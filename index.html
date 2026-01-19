@@ -20,13 +20,19 @@
         #timer-val { font-size: 70px; font-weight: 900; color: var(--gold); }
         #mult-val { font-size: 65px; font-weight: 900; transition: all 0.3s; }
         
-        /* Pause Effect */
         .paused-result { animation: flash 0.5s ease-in-out infinite alternate; scale: 1.2; text-shadow: 0 0 20px var(--error); }
         @keyframes flash { from { opacity: 1; } to { opacity: 0.7; } }
 
         .track { height: 130px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
-        .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; }
+        .camel-wrap { position: absolute; bottom: 10px; left: 0; transition: left 0.1s linear; z-index: 10; }
         .camel { font-size: 50px; transform: scaleX(-1); }
+
+        /* Dust Animation */
+        .dust { position: absolute; background: rgba(255, 255, 255, 0.2); border-radius: 50%; pointer-events: none; animation: dust-move 0.6s ease-out forwards; }
+        @keyframes dust-move { 
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: translate(-30px, -10px) scale(2); opacity: 0; }
+        }
 
         .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; transition: filter 0.3s; }
         .locked { filter: grayscale(1) blur(1px); pointer-events: none; }
@@ -41,13 +47,11 @@
         .btn-cash { background: var(--error); color: white; }
         .btn-wait { background: #222; color: #555; }
 
-        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 70px; overflow-y: auto; }
+        #history-box { display: flex; flex-wrap: wrap; gap: 5px; height: 120px; overflow-y: auto; padding: 5px; }
         .hi { padding: 4px 10px; border-radius: 6px; font-size: 11px; background: #0d1117; font-weight: bold; border: 1px solid #222; }
 
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; justify-content:center; align-items:center; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 340px; text-align: center; }
-        
-        /* Hide Wallet Link Style */
         .secure-addr { background:#0d1117; padding:12px; border-radius:8px; word-break:break-all; color:var(--accent); font-family: monospace; font-size: 13px; border: 1px solid #333; margin: 15px 0; }
     </style>
 </head>
@@ -88,63 +92,76 @@
 <div id="deposit-modal" class="modal">
     <div class="modal-content">
         <h3 style="color:var(--gold)">Deposit USDT (TRC20)</h3>
-        <p style="font-size:11px; color:#888; margin-top:10px;">Send USDT to the address below:</p>
-        <div id="wallet-display" class="secure-addr">Loading...</div>
+        <div id="wallet-display" class="secure-addr">TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg</div>
         <input type="text" id="tx-hash" placeholder="Transaction Hash" style="width:100%; padding:10px; margin-bottom:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px;">
-        <button class="main-btn btn-bet" style="padding:12px; font-size:16px;" onclick="alert('Submitted for review')">Confirm Transfer</button>
+        <button class="main-btn btn-bet" style="padding:12px; font-size:16px;" onclick="submitDeposit()">Confirm Transfer</button>
         <button onclick="closeDeposit()" style="background:none; border:none; color:var(--error); margin-top:15px; cursor:pointer;">Close</button>
     </div>
 </div>
 
 <script>
-    // Wallet Obfuscation (إخفاء الرابط عن طريق التشفير البسيط Base64)
     const _0x4f22 = "VEc5Z1QxcFBKSzNhRVRScDFoVnUyOEY1WmF5dTRvVnlFZw==";
-    function getAddr() { return atob(_0x4f22); }
-
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
-    let user = { balance: 1000, id: 'test' }; // Default for demo
-    let state = 'waiting', nextT = 0, startT = 0, crashP = 0;
+    let user = null, state = 'waiting', nextT = 0, startT = 0, crashP = 0;
     let betted = false, cashed = false;
 
-    function openDeposit() { 
-        document.getElementById('wallet-display').innerText = getAddr();
-        document.getElementById('deposit-modal').style.display = 'flex'; 
+    // Load User & History
+    async function init() {
+        // Here you would normally have a login, using a test ID for now
+        const { data } = await sb.from('Profiles').select('*').limit(1).single();
+        if(data) {
+            user = data;
+            document.getElementById('un').innerText = user.username;
+            document.getElementById('ub').innerText = user.balance.toFixed(2);
+        }
+        loadHistory();
+        engine();
     }
-    function closeDeposit() { document.getElementById('deposit-modal').style.display = 'none'; }
 
-    function getCrash() {
-        let r = Math.random() * 100;
-        if (r <= 3) return 1.00;
-        let s = Math.random() * 100;
-        if (s <= 70) return parseFloat((1.01 + Math.random() * 1.5).toFixed(2));
-        return parseFloat((2.0 + Math.random() * 48.0).toFixed(2));
+    async function loadHistory() {
+        const { data } = await sb.from('GameHistory').select('crash_point').order('created_at', {ascending: false}).limit(50);
+        if(data) {
+            const box = document.getElementById('history-box');
+            box.innerHTML = '';
+            data.forEach(game => renderHistoryItem(game.crash_point));
+        }
+    }
+
+    function createDust() {
+        if(state !== 'racing') return;
+        const track = document.getElementById('tr');
+        const camel = document.getElementById('cw');
+        const dust = document.createElement('div');
+        dust.className = 'dust';
+        const leftPos = parseFloat(camel.style.left) || 0;
+        dust.style.left = `calc(${leftPos}% + 10px)`;
+        dust.style.bottom = '15px';
+        dust.style.width = Math.random() * 8 + 4 + 'px';
+        dust.style.height = dust.style.width;
+        track.appendChild(dust);
+        setTimeout(() => dust.remove(), 600);
     }
 
     function engine() {
         setInterval(() => {
             const now = Date.now();
-            
-            if (state === 'paused') {
-                // نظام التوقف المؤقت لرؤية النتيجة
-                return; 
-            }
+            if (state === 'paused') return;
 
             if (now < nextT) {
                 state = 'waiting';
                 document.getElementById('timer-val').innerText = Math.ceil((nextT - now)/1000);
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
-                document.getElementById('mult-val').classList.remove('paused-result');
                 document.getElementById('ctrl').classList.remove('locked');
                 resetScene();
             } else if (startT > 0) {
                 state = 'racing';
                 document.getElementById('ctrl').classList.add('locked');
                 let el = (now - startT)/1000;
-                let m = Math.pow(1.09, el);
+                let m = Math.pow(1.085, el); // Balanced speed
 
                 if (m >= crashP) {
                     doExplosion(crashP);
@@ -153,69 +170,105 @@
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; 
                     mv.innerText = m.toFixed(2) + 'x';
-                    document.getElementById('cw').style.left = Math.min(el * 6, 85) + '%';
                     
-                    // Auto Cashout Logic
-                    if (betted && !cashed && document.getElementById('auto-on').checked) {
-                        if (m >= parseFloat(document.getElementById('av').value)) doCashout(m);
+                    // Camel Move Limit 85%
+                    document.getElementById('cw').style.left = Math.min(el * 5, 85) + '%';
+                    if(Math.random() > 0.7) createDust();
+                    
+                    if (betted && !cashed) {
+                        updateCashoutButton(m);
+                        if (document.getElementById('auto-on').checked && m >= parseFloat(document.getElementById('av').value)) {
+                            doCashout(m);
+                        }
                     }
                 }
             } else { 
-                crashP = getCrash(); 
+                crashP = (Math.random() * 100 <= 3) ? 1.00 : parseFloat((Math.pow(1 / Math.random(), 0.95)).toFixed(2));
+                if(crashP > 100) crashP = 40 + Math.random() * 60; // Caps but keeps high
                 startT = Date.now(); 
                 cashed = false; 
             }
         }, 50);
     }
 
-    function doExplosion(p) {
-        state = 'paused'; // تفعيل وضع التوقف
+    async function doExplosion(p) {
+        state = 'paused';
         const mv = document.getElementById('mult-val');
         mv.innerText = p.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
-        mv.classList.add('paused-result'); // تمييز النتيجة
+        mv.classList.add('paused-result');
         
-        // حفظ النتيجة في السجل
-        addHistory(p);
+        await sb.from('GameHistory').insert([{ crash_point: p }]);
+        renderHistoryItem(p, true);
 
-        // العودة للعد التنازلي بعد 3 ثوانٍ من التوقف
         setTimeout(() => {
             startT = 0;
             cashed = false;
             betted = false;
             nextT = Date.now() + 5000;
             state = 'waiting';
+            document.getElementById('mult-val').classList.remove('paused-result');
         }, 3000); 
     }
 
-    function doCashout(m) {
-        if (cashed || !betted) return;
+    async function doCashout(m) {
+        if (cashed || !betted || !user) return;
         cashed = true;
-        let win = parseFloat(document.getElementById('ba').value) * m;
-        user.balance += win;
-        document.getElementById('ub').innerText = user.balance.toFixed(2);
-        document.getElementById('ab').innerText = "WON: " + win.toFixed(2);
-        document.getElementById('ab').className = "main-btn btn-wait";
+        let betAmt = parseFloat(document.getElementById('ba').value);
+        let win = betAmt * m;
+        
+        const newBalance = user.balance + win;
+        const { error } = await sb.from('Profiles').update({ balance: newBalance }).eq('id', user.id);
+        
+        if(!error) {
+            user.balance = newBalance;
+            document.getElementById('ub').innerText = user.balance.toFixed(2);
+            const btn = document.getElementById('ab');
+            btn.innerText = "WON: " + win.toFixed(2);
+            btn.className = "main-btn btn-wait";
+        }
     }
 
-    function mainAction() {
-        if (state === 'waiting' && !betted) {
+    function updateCashoutButton(m) {
+        const btn = document.getElementById('ab');
+        const betAmt = parseFloat(document.getElementById('ba').value);
+        btn.innerText = `CASHOUT ${(betAmt * m).toFixed(2)}`;
+        btn.className = "main-btn btn-cash";
+    }
+
+    async function mainAction() {
+        if (state === 'waiting' && !betted && user) {
             let amt = parseFloat(document.getElementById('ba').value);
-            if (user.balance >= amt) {
-                user.balance -= amt;
-                betted = true;
-                document.getElementById('ub').innerText = user.balance.toFixed(2);
-                document.getElementById('ab').innerText = "Betting...";
-                document.getElementById('ab').className = "main-btn btn-wait";
+            if (user.balance >= amt && amt > 0) {
+                const newBalance = user.balance - amt;
+                const { error } = await sb.from('Profiles').update({ balance: newBalance }).eq('id', user.id);
+                if(!error) {
+                    user.balance = newBalance;
+                    betted = true;
+                    document.getElementById('ub').innerText = user.balance.toFixed(2);
+                    document.getElementById('ab').innerText = "BET PLACED";
+                    document.getElementById('ab').className = "main-btn btn-wait";
+                }
             }
         } else if (state === 'racing' && betted && !cashed) {
             doCashout(parseFloat(document.getElementById('mult-val').innerText));
         }
     }
 
+    function renderHistoryItem(p, prepend = false) {
+        const box = document.getElementById('history-box');
+        const item = document.createElement('div');
+        item.className = 'hi';
+        item.style.color = p < 2 ? 'var(--error)' : 'var(--accent)';
+        item.innerText = p.toFixed(2) + 'x';
+        if(prepend) box.prepend(item); else box.appendChild(item);
+        if (box.children.length > 50) box.lastChild.remove();
+    }
+
     function resetScene() {
-        document.getElementById('cw').style.left = '0%';
-        document.getElementById('cw').style.opacity = '1';
+        const camel = document.getElementById('cw');
+        camel.style.left = '0%';
+        camel.style.opacity = '1';
         document.getElementById('mult-val').style.color = 'white';
         if (!betted) {
             document.getElementById('ab').innerText = "Place Bet";
@@ -223,18 +276,10 @@
         }
     }
 
-    function addHistory(p) {
-        const box = document.getElementById('history-box');
-        const item = document.createElement('div');
-        item.className = 'hi';
-        item.style.color = p < 2 ? 'var(--error)' : 'var(--accent)';
-        item.innerText = p.toFixed(2) + 'x';
-        box.prepend(item);
-        if (box.children.length > 50) box.lastChild.remove(); // الالتزام بآخر 50 دخول كما في ذاكرتك
-    }
+    function openDeposit() { document.getElementById('deposit-modal').style.display = 'flex'; }
+    function closeDeposit() { document.getElementById('deposit-modal').style.display = 'none'; }
 
-    // Start
-    engine();
+    init();
 </script>
 </body>
 </html>
