@@ -185,7 +185,7 @@
                 resetScene();
             } else if (startT > 0) {
                 state = 'racing';
-                document.getElementById('at').classList.add('locked'); // قفل زر التلقائي أثناء الجولة
+                document.getElementById('at').classList.add('locked');
                 let elapsed = (now - startT)/1000;
                 let m = Math.pow(1.08, elapsed);
                 
@@ -200,11 +200,8 @@
                     document.getElementById('tr').style.backgroundPosition = bgX + 'px 0px';
                     if(Math.random() > 0.5) createDust();
 
-                    // منطق السحب (تلقائي أو يدوي)
                     if(betted && !cashed) {
                         updateUI("سحب الأرباح", "btn-cash", (m * parseFloat(document.getElementById('ba').value)).toFixed(2));
-                        
-                        // تنفيذ السحب التلقائي
                         if(autoEnabled && m >= parseFloat(document.getElementById('av').value)) {
                             doCashout(m);
                         }
@@ -247,11 +244,26 @@
         }
     }
 
+    // الدالة المحدثة بنظام الاحتمالات الدقيق الذي طلبته
     function getCrash() {
         let r = Math.random() * 100;
-        if(r < 3) return 1.00;
-        if(r <= 75) return parseFloat((1.01 + Math.random()*2.5).toFixed(2));
-        return parseFloat((3.51 + Math.random()*40).toFixed(2));
+
+        if (r <= 70) {
+            // نسبة 70% ظهور مضاعف بين 1.00 و 5.00
+            return parseFloat((1.00 + Math.random() * 4.00).toFixed(2));
+        } 
+        else if (r <= 90) {
+            // نسبة 20% (من 70 إلى 90) ظهور مضاعف بين 5.00 و 20.00
+            return parseFloat((5.01 + Math.random() * 14.99).toFixed(2));
+        } 
+        else if (r <= 99) {
+            // نسبة 9% (من 90 إلى 99) ظهور مضاعف بين 20.00 و 70.00
+            return parseFloat((20.01 + Math.random() * 49.99).toFixed(2));
+        } 
+        else {
+            // نسبة 1% (ما فوق 99) ظهور مضاعف من 70.00 فما فوق
+            return parseFloat((70.01 + Math.random() * 430.00).toFixed(2));
+        }
     }
 
     function createDust() {
