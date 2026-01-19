@@ -1,0 +1,17 @@
+{
+  "short_name": "الهجن Pro",
+  "name": "سباق الهجن Pro - النظام التلقائي",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3504/3504491.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#0b141a",
+  "background_color": "#0b141a",
+  "orientation": "portrait"
+}
