@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - السرعة القصوى</title>
+    <title>سباق الهجن Pro - الإصدار المستقر</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -31,20 +31,18 @@
         .crash-anim { transform: scale(1.3); color: var(--error) !important; animation: shake 0.2s infinite; }
         @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, -2px); } }
 
-        /* المضمار مع تأثير السرعة الجنونية */
         .track { height: 140px; background: #0d1117; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #2d333b; margin-bottom: 10px; }
         .moving-bg { position: absolute; inset: 0; 
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%),
-                        repeating-linear-gradient(90deg, #0d1117 0, #0d1117 40px, #1a1a1a 41px, #1a1a1a 42px);
-            background-size: 200% 100%; animation: moveGround 0.3s linear infinite; display: none; }
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%),
+                        repeating-linear-gradient(90deg, #0d1117 0, #0d1117 40px, #222 41px, #222 42px);
+            background-size: 200% 100%; animation: moveGround 0.2s linear infinite; display: none; }
         @keyframes moveGround { from { background-position: 200% 0; } to { background-position: 0% 0; } }
         
-        /* غبار كثيف جداً */
-        .dust { position: absolute; background: rgba(139, 103, 66, 0.8); border-radius: 50%; pointer-events: none; filter: blur(8px); z-index: 4; animation: dustFade 0.6s forwards; }
-        @keyframes dustFade { 0% { transform: scale(1) translate(0,0); opacity: 0.9; } 100% { transform: scale(4) translate(-100px, -30px); opacity: 0; } }
+        .dust { position: absolute; background: rgba(139, 103, 66, 0.6); border-radius: 50%; pointer-events: none; filter: blur(6px); z-index: 4; animation: dustFade 0.5s linear forwards; }
+        @keyframes dustFade { 0% { transform: scale(1) translate(0,0); opacity: 0.8; } 100% { transform: scale(3) translate(-80px, -20px); opacity: 0; } }
 
         .camel-wrap { position: absolute; bottom: 15px; left: 0; transition: left 0.1s linear; z-index: 5; }
-        .camel { font-size: 55px; transform: scaleX(-1); filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+        .camel { font-size: 55px; transform: scaleX(-1); }
 
         .controls { background: #0d1117; padding: 12px; border-radius: 15px; margin-bottom: 10px; z-index: 10; }
         .input-group { display: flex; gap: 5px; margin-bottom: 10px; align-items: flex-end; }
@@ -140,40 +138,37 @@
 
     function generateCrashPoint() {
         const rand = Math.random() * 100;
-        if (rand < 70) return parseFloat((1 + Math.random() * 1).toFixed(2));
-        if (rand < 90) return parseFloat((2 + Math.random() * 18).toFixed(2));
-        if (rand < 97) return parseFloat((20 + Math.random() * 30).toFixed(2));
-        if (rand < 99.9) return parseFloat((50 + Math.random() * 50).toFixed(2));
-        return parseFloat((100 + Math.random() * 400).toFixed(2));
+        if (rand < 70) return parseFloat((1 + Math.random() * 0.9).toFixed(2));
+        if (rand < 90) return parseFloat((1.9 + Math.random() * 8).toFixed(2));
+        return parseFloat((10 + Math.random() * 90).toFixed(2));
     }
 
-    // غبار كثيف جداً جداً
-    function createDustParticles() {
+    // توليد غبار كثيف جداً بشكل مستقر
+    function createDust() {
+        if (state !== 'racing') return;
         const tr = document.getElementById('tr-container');
         const cw = document.getElementById('cw');
         const rect = cw.getBoundingClientRect();
         const trRect = tr.getBoundingClientRect();
-        for(let i=0; i<8; i++) { // زيادة العدد ليكون كثيفاً جداً
+        
+        for(let i=0; i<4; i++) {
             const d = document.createElement('div');
             d.className = 'dust';
-            d.style.left = (rect.left - trRect.left + 15) + 'px';
-            d.style.bottom = (Math.random() * 25 + 10) + 'px';
-            const sz = Math.random() * 20 + 10;
-            d.style.width = sz + 'px'; d.style.height = sz + 'px';
+            d.style.left = (rect.left - trRect.left + 10) + 'px';
+            d.style.bottom = (Math.random() * 20 + 15) + 'px';
+            const size = Math.random() * 15 + 10;
+            d.style.width = size + 'px'; d.style.height = size + 'px';
             tr.appendChild(d);
-            setTimeout(() => d.remove(), 600);
+            setTimeout(() => d.remove(), 500);
         }
     }
 
     function triggerVisualExplosion() {
         const zone = document.getElementById('display-zone');
-        const app = document.getElementById('main-app');
-        app.style.transform = "scale(0.96)";
-        setTimeout(() => app.style.transform = "scale(1)", 100);
-        for(let i=0; i<15; i++) {
+        for(let i=0; i<10; i++) {
             const p = document.createElement('div');
             p.className = 'exp-particle';
-            p.style.width = '30px'; p.style.height = '30px';
+            p.style.width = '25px'; p.style.height = '25px';
             p.style.left = '50%'; p.style.top = '50%';
             zone.appendChild(p);
             setTimeout(() => p.remove(), 600);
@@ -191,18 +186,20 @@
         const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
         if(!u || p.length < 6) return alert("البيانات غير صالحة");
         const email = `${u.trim()}@camel.com`;
-        if(mode === 'signup') {
-            const { data, error } = await sb.auth.signUp({ email, password: p });
-            if(error) return alert(error.message);
-            const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
-            await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
-            alert("تم التسجيل!"); switchAuth('login');
-        } else {
-            const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
-            if(error) return alert("خطأ في الدخول");
-            const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
-            user = pr; startApp();
-        }
+        try {
+            if(mode === 'signup') {
+                const { data, error } = await sb.auth.signUp({ email, password: p });
+                if(error) throw error;
+                const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
+                await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
+                alert("تم التسجيل!"); switchAuth('login');
+            } else {
+                const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
+                if(error) throw error;
+                const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
+                user = pr; startApp();
+            }
+        } catch(e) { alert(e.message); }
     }
 
     function startApp() {
@@ -217,11 +214,9 @@
         setInterval(() => {
             const now = Date.now();
             if (state === 'paused') return;
-            const autoToggle = document.getElementById('auto-cash-toggle');
 
             if(now < nextT) {
                 state = 'waiting';
-                autoToggle.disabled = false;
                 document.getElementById('timer-val').innerText = Math.ceil((nextT - now)/1000);
                 document.getElementById('timer-val').style.display = 'block';
                 document.getElementById('mult-val').style.display = 'none';
@@ -230,9 +225,7 @@
                 updateBtnUI(); resetScene();
             } else if (startT > 0) {
                 state = 'racing';
-                autoToggle.disabled = true;
                 document.getElementById('bg-move').style.display = 'block';
-
                 let el = (now - startT)/1000;
                 currentMult = Math.pow(1.08, el);
                 
@@ -242,13 +235,14 @@
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
                     
-                    // الجمل يصل لـ 75% فقط كحد أقصى
-                    let pos = Math.min(el * 8, 75); 
-                    document.getElementById('cw').style.left = pos + '%';
+                    // تحكم دقيق في موقع الجمل (حد أقصى 75%)
+                    let progress = Math.min(el * 10, 75);
+                    document.getElementById('cw').style.left = progress + '%';
                     
-                    createDustParticles();
+                    createDust();
                     updateBtnUI();
-                    if(betted && !cashed && autoToggle.checked) {
+
+                    if(betted && !cashed && document.getElementById('auto-cash-toggle').checked) {
                         if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
                     }
                 }
@@ -256,7 +250,7 @@
                 crashP = generateCrashPoint();
                 startT = Date.now(); cashed = false; 
             }
-        }, 50);
+        }, 60); // زيادة المهلة قليلاً لتحقيق استقرار المعالج
     }
 
     function updateBtnUI() {
@@ -273,7 +267,7 @@
     }
 
     async function doCashout() {
-        if(cashed || !betted) return;
+        if(cashed || !betted || state !== 'racing') return;
         cashed = true;
         let win = parseFloat(document.getElementById('ba').value) * currentMult;
         user.balance += win; 
@@ -290,13 +284,15 @@
         const mv = document.getElementById('mult-val');
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.classList.add('crash-anim');
+        
         await sb.from('GameHistory').insert([{ crash_point: crashP }]);
         sync();
+        
         setTimeout(() => {
             state = 'waiting'; startT = 0; betted = false;
-            nextT = Date.now() + 5000;
+            nextT = Date.now() + 4000;
             mv.classList.remove('crash-anim');
-        }, 3000);
+        }, 2500);
     }
 
     async function mainAction() {
@@ -317,7 +313,7 @@
     }
 
     async function sync() {
-        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(15);
+        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(20);
         if(data) {
             document.getElementById('history-box').innerHTML = data.map(i => 
                 `<div class="hi" style="color:${i.crash_point < 2 ? '#ff4b4b' : '#00ff88'}">${i.crash_point.toFixed(2)}x</div>`
