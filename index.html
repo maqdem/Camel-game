@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - نظام التلقائي</title>
+    <title>سباق الهجن Pro - نظام التوزيع المطور</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
@@ -12,7 +12,6 @@
         
         .app-container { width: 100%; max-width: 420px; height: 95vh; background: var(--card); padding: 20px; border-radius: 30px; border: 1px solid #2d333b; position: relative; overflow: hidden; }
         
-        /* واجهة الدخول */
         #auth-overlay { position: absolute; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
         .auth-tabs { display: flex; background: #0d1117; border-radius: 12px; margin-bottom: 20px; padding: 5px; }
         .auth-tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #666; }
@@ -23,12 +22,10 @@
         .logout-btn { background: none; border: 1px solid var(--error); color: var(--error); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
         .balance-box { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--gold); padding: 6px 15px; border-radius: 12px; color: var(--gold); font-weight: bold; }
 
-        /* منطقة العرض */
         #display-zone { height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         #timer-val { font-size: 85px; font-weight: 900; color: var(--gold); }
         #mult-val { font-size: 75px; font-weight: 900; transition: color 0.3s; }
 
-        /* المضمار والجمل */
         .track { 
             height: 140px; background: #0d1117; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #2d333b; margin: 10px 0;
             background-image: linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
@@ -46,7 +43,6 @@
         .coin { position: absolute; color: var(--gold); font-size: 24px; pointer-events: none; z-index: 1000; animation: coinToWallet 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards; }
         @keyframes coinToWallet { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-300px) scale(0.5); opacity: 0; } }
 
-        /* التحكم */
         .controls { background: #0d1117; padding: 15px; border-radius: 20px; }
         .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
         .field { flex: 1; text-align: center; }
@@ -244,25 +240,29 @@
         }
     }
 
-    // الدالة المحدثة بنظام الاحتمالات الدقيق الذي طلبته
+    // الدالة المحدثة بنظام التوزيع الجديد
     function getCrash() {
         let r = Math.random() * 100;
 
-        if (r <= 70) {
-            // نسبة 70% ظهور مضاعف بين 1.00 و 5.00
-            return parseFloat((1.00 + Math.random() * 4.00).toFixed(2));
+        if (r <= 40) {
+            // الفئة الأولى (1.00 - 3.00): نطاق 40%
+            return parseFloat((1.00 + Math.random() * 2.00).toFixed(2));
+        } 
+        else if (r <= 80) {
+            // الفئة الثانية (3.00 - 10.00): نطاق 40%
+            return parseFloat((3.01 + Math.random() * 6.99).toFixed(2));
         } 
         else if (r <= 90) {
-            // نسبة 20% (من 70 إلى 90) ظهور مضاعف بين 5.00 و 20.00
-            return parseFloat((5.01 + Math.random() * 14.99).toFixed(2));
+            // الفئة الثالثة (10.00 - 30.00): نطاق 10%
+            return parseFloat((10.01 + Math.random() * 19.99).toFixed(2));
         } 
-        else if (r <= 99) {
-            // نسبة 9% (من 90 إلى 99) ظهور مضاعف بين 20.00 و 70.00
-            return parseFloat((20.01 + Math.random() * 49.99).toFixed(2));
+        else if (r <= 99.9) {
+            // الفئة الرابعة (30.00 - 100.00): نطاق 9.9%
+            return parseFloat((30.01 + Math.random() * 69.99).toFixed(2));
         } 
         else {
-            // نسبة 1% (ما فوق 99) ظهور مضاعف من 70.00 فما فوق
-            return parseFloat((70.01 + Math.random() * 430.00).toFixed(2));
+            // الفئة الأخيرة (100+): نطاق 0.1%
+            return parseFloat((100.01 + Math.random() * 400.00).toFixed(2));
         }
     }
 
