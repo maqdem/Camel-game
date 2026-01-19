@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - النسخة الجماعية الآمنة</title>
+    <title>سباق الهجن Pro - النسخة الموحدة</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
@@ -121,7 +121,7 @@
     let mode = 'login', user = null, state = 'waiting';
     let gameStartTime = 0, crashP = 1.0, currentSessionId = null;
     let betted = false, cashed = false, autoEnabled = false, bgX = 0;
-    const WAIT_TIME = 10000; // 10 ثوانٍ وقت المراهنة
+    const WAIT_TIME = 10000; // 10 ثوانٍ انتظار موحدة
 
     function switchAuth(m) {
         mode = m;
@@ -138,12 +138,12 @@
         if(mode === 'signup') {
             const { data, error } = await sb.auth.signUp({ email, password: p });
             if(error) return alert("خطأ: " + error.message);
-            await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 1000 }]);
+            await sb.from('profiles').insert([{ id: data.user.id, username: u, balance: 1000 }]);
             alert("تم التسجيل! سجل دخولك الآن"); switchAuth('login');
         } else {
             const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
             if(error) return alert("فشل الدخول");
-            const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
+            const { data: pr } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
             user = pr; startApp();
         }
     }
@@ -156,6 +156,7 @@
         btn.innerText = autoEnabled ? "ON" : "OFF";
     }
 
+    // مزامنة التوقيت والجولة مع السيرفر
     async function syncWithServer() {
         const { data } = await sb.from('game_sessions')
             .select('*')
@@ -163,16 +164,12 @@
             .limit(1)
             .single();
 
-        if (data) {
-            let serverTime = new Date(data.created_at).getTime();
-            // تحديث البيانات فقط إذا كانت جولة جديدة
-            if(currentSessionId !== data.id) {
-                gameStartTime = serverTime;
-                crashP = data.crash_point;
-                currentSessionId = data.id;
-                cashed = false;
-                if(state === 'paused') resetScene();
-            }
+        if (data && currentSessionId !== data.id) {
+            gameStartTime = new Date(data.created_at).getTime();
+            crashP = data.crash_point;
+            currentSessionId = data.id;
+            cashed = false;
+            if(state === 'paused') resetScene();
         }
     }
 
@@ -181,12 +178,11 @@
         document.getElementById('un').innerText = user.username;
         document.getElementById('ub').innerText = user.balance.toFixed(2);
         
-        // المزامنة الفورية مع السيرفر
-        setInterval(syncWithServer, 3000);
+        // المزامنة الدورية والبث اللحظي
+        setInterval(syncWithServer, 4000);
         syncWithServer();
         
-        // الاشتراك في البث اللحظي لتحديث النتائج
-        sb.channel('global_games')
+        sb.channel('public:game_sessions')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_sessions' }, syncWithServer)
           .subscribe();
 
@@ -201,7 +197,7 @@
             const elapsedSinceCreation = now - gameStartTime;
 
             if (elapsedSinceCreation < WAIT_TIME) {
-                // مرحلة الرهان
+                // مرحلة الانتظار الموحدة
                 state = 'waiting';
                 let countdown = Math.ceil((WAIT_TIME - elapsedSinceCreation) / 1000);
                 document.getElementById('timer-val').style.display = 'block';
@@ -211,7 +207,7 @@
                 updateUI(betted ? "بانتظار السباق..." : "وضع رهان", betted ? "btn-wait" : "btn-bet");
                 resetScene();
             } else {
-                // مرحلة السباق
+                // مرحلة السباق الموحدة
                 state = 'racing';
                 document.getElementById('at').classList.add('locked');
                 let raceElapsed = (now - (gameStartTime + WAIT_TIME)) / 1000;
@@ -231,6 +227,7 @@
 
                     if (betted && !cashed) {
                         updateUI("سحب الأرباح", "btn-cash", (m * parseFloat(document.getElementById('ba').value)).toFixed(2));
+                        // السحب التلقائي
                         if(autoEnabled && m >= parseFloat(document.getElementById('av').value)) {
                             doCashout(m);
                         }
@@ -257,7 +254,7 @@
             doCashout(parseFloat(document.getElementById('mult-val').innerText));
         } else if(state === 'waiting' && !betted) {
             const amount = parseFloat(document.getElementById('ba').value);
-            // رهان آمن عبر السيرفر (RPC)
+            // الرهان عبر السيرفر (RPC) لضمان الأمان
             const { data, error } = await sb.rpc('place_bet_secure', { amount_input: amount });
             if(error) return alert(error.message);
             
@@ -270,7 +267,7 @@
 
     async function doCashout(m) {
         if(cashed || !betted) return;
-        // تحقق آمن من السحب عبر السيرفر
+        // التحقق من السحب عبر السيرفر لمنع التلاعب بالكود الأمامي
         const { data, error } = await sb.rpc('verify_and_cashout', { 
             session_uuid: currentSessionId, 
             multiplier_at_press: m 
