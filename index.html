@@ -7,7 +7,6 @@
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        /* تم الإبقاء على كافة التنسيقات والمميزات البصرية الأصلية تماماً */
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; --input: #12191f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
@@ -174,11 +173,10 @@
                 state = 'racing';
                 document.getElementById('bg-move').style.display = 'block';
                 
-                // تحسين معادلة النمو لتكون أكثر سلاسة واستجابة
                 let el = (now - startT)/1000;
+                // تعديل بسيط في الصيغة لضمان بداية فورية سلسة
                 currentMult = Math.pow(1.075, el); 
                 
-                // معالجة الانفجار
                 if(currentMult >= crashP) { 
                     explosion(); 
                 } else {
@@ -190,7 +188,6 @@
                     createDust(); 
                     updateBtnUI();
 
-                    // السحب الآلي
                     if(betted && !cashed && document.getElementById('auto-cash-toggle').checked) {
                         if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
                     }
@@ -198,15 +195,16 @@
             } else { 
                 state = 'loading'; 
                 crashP = await fetchCrashPoint();
-                // معالجة الكراش الفوري (5%) مباشرة لتقليل اللاج
-                if (crashP <= 1.00) {
+                // إذا كان الكراش 1.00، نقوم بالتفجير فوراً لتقليل الإحباط البصري
+                if (crashP <= 1.005) {
+                    crashP = 1.00;
                     explosion();
                 } else {
                     startT = Date.now(); 
                     cashed = false; 
                 }
             }
-        }, 50); // تسريع التحديث لـ 50ms لزيادة السلاسة
+        }, 50);
     }
 
     async function mainAction() {
@@ -227,7 +225,6 @@
     async function doCashout() {
         if(cashed || !betted || state !== 'racing') return;
         
-        // قفل الواجهة فوراً لمنع اللاج والضغط المتكرر
         const capturedMult = currentMult;
         cashed = true;
         const btn = document.getElementById('ab');
@@ -240,7 +237,7 @@
             await syncUserData();
             updateBtnUI();
         } else { 
-            cashed = false; // إعادة المحاولة في حال فشل السيرفر فقط
+            cashed = false; 
             updateBtnUI();
             console.error(error); 
         }
@@ -256,7 +253,6 @@
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
         
-        // تسجيل النتيجة في الخلفية
         sb.from('GameHistory').insert([{ crash_point: crashP }]).then(() => {
             sync(); syncMyBets();
         });
@@ -268,7 +264,6 @@
         }, 2500);
     }
 
-    // --- الوظائف البصرية والإدارية (كما هي) ---
     function createDust() {
         const d = document.createElement('div'); d.className = 'dust';
         d.style.left = (document.getElementById('cw').offsetLeft + 10) + 'px';
@@ -341,7 +336,7 @@
         if(event) event.target.classList.add('active');
     }
     async function sync() {
-        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(20);
+        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(50);
         if(data) document.getElementById('game-history').innerHTML = data.map(i => `
             <div class="history-item">
                 <span>جولة #${i.id.toString().slice(-4)}</span>
@@ -352,7 +347,7 @@
     }
     async function syncMyBets() {
         if(!user) return;
-        const { data } = await sb.from('UserBets').select('*').eq('user_id', user.id).order('created_at', {ascending:false}).limit(20);
+        const { data } = await sb.from('UserBets').select('*').eq('user_id', user.id).order('created_at', {ascending:false}).limit(50);
         if(data) document.getElementById('my-bets').innerHTML = data.map(i => `<div class="history-item"><span>💰 ${i.bet_amount}</span><span style="color:${i.status === 'won' ? 'var(--accent)' : 'var(--error)'}">${i.status === 'won' ? 'فوز' : 'خسارة'} (${i.multiplier || '0.00'}x)</span></div>`).join('');
     }
 </script>
