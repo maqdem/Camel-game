@@ -150,20 +150,28 @@
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
-    // --- التحديث هنا: دالة جلب النتيجة متوافقة مع إعدادات JWT الجديدة ---
+    // --- تحديث نظام الاحتمالات (70% تحت 2x) ---
     async function fetchCrashPoint() {
         try {
-            // استخدام GET لسهولة الفحص والتوافق مع تعطيل JWT
             const response = await fetch(SMART_FUNCTION_URL, {
                 method: 'GET',
                 headers: { 'Cache-Control': 'no-cache' }
             });
             const data = await response.json();
-            return data.crashPoint || 1.10; 
+            return data.crashPoint || generateManualPoint(); 
         } catch (e) {
-            console.error("خطأ اتصال بالسيرفر:", e);
-            return parseFloat((1.1 + Math.random() * 0.9).toFixed(2));
+            console.error("خطأ اتصال، استخدام النظام المحلي الجديد:", e);
+            return generateManualPoint();
         }
+    }
+
+    // تطبيق النسب بدقة: 70% (1-2) | 20% (2-4) | 9% (4-10) | 1% (+10)
+    function generateManualPoint() {
+        const r = Math.random() * 100;
+        if (r < 70) return parseFloat((1.00 + Math.random() * 1.00).toFixed(2));
+        if (r < 90) return parseFloat((2.00 + Math.random() * 2.00).toFixed(2));
+        if (r < 99) return parseFloat((4.00 + Math.random() * 6.00).toFixed(2));
+        return parseFloat((10.00 + Math.random() * 40.00).toFixed(2));
     }
 
     function toggleControls(lock) {
@@ -205,7 +213,7 @@
                     }
                 }
             } else { 
-                state = 'loading'; // حالة مؤقتة لجلب البيانات
+                state = 'loading'; 
                 crashP = await fetchCrashPoint();
                 startT = Date.now(); cashed = false; 
             }
@@ -261,7 +269,7 @@
         }, 2500);
     }
 
-    // بقية الدوال (Tabs, Sync, UI) كما هي تماماً للحفاظ على استقرار التجربة
+    // --- الدوال المساعدة (بدون تغيير) ---
     function showTab(tid) {
         document.querySelectorAll('.tab-body').forEach(b => b.style.display = 'none');
         document.querySelectorAll('.tab-h').forEach(h => h.classList.remove('active'));
@@ -329,7 +337,7 @@
                 if(error) throw error;
                 const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
                 await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
-                alert("تم التسجيل بنجاح!"); switchAuth('login');
+                alert("تم التسجيل! سجل دخولك الآن."); switchAuth('login');
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
                 if(error) throw error;
@@ -349,9 +357,9 @@
 
     async function submitDeposit() {
         const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("يرجى ملأ البيانات");
+        if(!h || !a) return alert("املأ البيانات");
         await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
-        alert("تم إرسال الطلب للمراجعة"); closeModal('deposit-modal');
+        alert("تم الإرسال للمراجعة"); closeModal('deposit-modal');
     }
 
     async function submitWithdraw() {
@@ -362,7 +370,7 @@
         await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
         await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: a }]);
         document.getElementById('ub').innerText = user.balance.toFixed(2);
-        alert("تم تقديم طلب السحب بنجاح"); closeModal('withdraw-modal');
+        alert("تم تقديم طلب السحب"); closeModal('withdraw-modal');
     }
 </script>
 </body>
