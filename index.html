@@ -58,6 +58,7 @@
         @keyframes explodeOut { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
         .dust { position: absolute; background: rgba(139, 103, 66, 0.4); border-radius: 50%; pointer-events: none; filter: blur(4px); animation: dustFade 0.5s linear forwards; }
         @keyframes dustFade { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(3) translate(-40px, -10px); opacity: 0; } }
+        .ref-section { text-align: center; font-size: 10px; margin-top: 5px; color: #888; }
     </style>
 </head>
 <body>
@@ -115,7 +116,7 @@
         <div id="my-bets" class="tab-body" style="display:none"></div>
     </div>
     
-    <div class="ref-section">كود الإحالة: <b id="my-ref-code" style="color:var(--gold)">---</b></div>
+    <div class="ref-section">كود الإحالة الخاص بك: <b id="my-ref-code" style="color:var(--gold)">---</b></div>
 </div>
 
 <div id="deposit-modal" class="modal">
@@ -149,19 +150,19 @@
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
-    // دالة جلب نقطة الانفجار المؤمنة من السيرفر
+    // --- التحديث هنا: دالة جلب النتيجة متوافقة مع إعدادات JWT الجديدة ---
     async function fetchCrashPoint() {
         try {
+            // استخدام GET لسهولة الفحص والتوافق مع تعطيل JWT
             const response = await fetch(SMART_FUNCTION_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                method: 'GET',
+                headers: { 'Cache-Control': 'no-cache' }
             });
             const data = await response.json();
-            return data.crashPoint;
+            return data.crashPoint || 1.10; 
         } catch (e) {
-            console.error("خطأ اتصال:", e);
-            // رقم احتياطي في حالة تعطل السيرفر لضمان عدم توقف اللعبة
-            return parseFloat((1 + Math.random() * 0.5).toFixed(2));
+            console.error("خطأ اتصال بالسيرفر:", e);
+            return parseFloat((1.1 + Math.random() * 0.9).toFixed(2));
         }
     }
 
@@ -204,7 +205,7 @@
                     }
                 }
             } else { 
-                // جلب النتيجة من السيرفر قبل بدء السباق
+                state = 'loading'; // حالة مؤقتة لجلب البيانات
                 crashP = await fetchCrashPoint();
                 startT = Date.now(); cashed = false; 
             }
@@ -260,6 +261,7 @@
         }, 2500);
     }
 
+    // بقية الدوال (Tabs, Sync, UI) كما هي تماماً للحفاظ على استقرار التجربة
     function showTab(tid) {
         document.querySelectorAll('.tab-body').forEach(b => b.style.display = 'none');
         document.querySelectorAll('.tab-h').forEach(h => h.classList.remove('active'));
@@ -272,7 +274,7 @@
         if(data) {
             document.getElementById('game-history').innerHTML = data.map(i => `
                 <div class="history-item">
-                    <span>رقم الجولة: #${i.id.toString().slice(-4)}</span>
+                    <span>الجولة #${i.id.toString().slice(-4)}</span>
                     <span class="hi-badge" style="color:${i.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">${i.crash_point.toFixed(2)}x</span>
                 </div>`).join('');
         }
@@ -292,7 +294,8 @@
 
     function createDust() {
         const d = document.createElement('div'); d.className = 'dust';
-        d.style.left = (document.getElementById('cw').offsetLeft + 10) + 'px';
+        const camelWrap = document.getElementById('cw');
+        d.style.left = (camelWrap.offsetLeft + 10) + 'px';
         d.style.bottom = '15px'; document.getElementById('tr-container').appendChild(d);
         setTimeout(() => d.remove(), 500);
     }
@@ -326,14 +329,14 @@
                 if(error) throw error;
                 const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
                 await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
-                alert("تم التسجيل! سجل دخولك الآن."); switchAuth('login');
+                alert("تم التسجيل بنجاح!"); switchAuth('login');
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
                 if(error) throw error;
                 const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
                 user = pr; startApp();
             }
-        } catch(e) { alert(e.message); }
+        } catch(e) { alert("خطأ: " + e.message); }
     }
 
     function startApp() {
@@ -346,9 +349,9 @@
 
     async function submitDeposit() {
         const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("املأ البيانات");
+        if(!h || !a) return alert("يرجى ملأ البيانات");
         await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
-        alert("تم الإرسال للمراجعة"); closeModal('deposit-modal');
+        alert("تم إرسال الطلب للمراجعة"); closeModal('deposit-modal');
     }
 
     async function submitWithdraw() {
@@ -359,7 +362,7 @@
         await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
         await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: a }]);
         document.getElementById('ub').innerText = user.balance.toFixed(2);
-        alert("تم تقديم طلب السحب"); closeModal('withdraw-modal');
+        alert("تم تقديم طلب السحب بنجاح"); closeModal('withdraw-modal');
     }
 </script>
 </body>
