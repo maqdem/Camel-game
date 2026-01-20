@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سباق الهجن Pro - الإصدار المتكامل</title>
+    <title>سباق الهجن Pro - الإصدار الآمن</title>
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -58,7 +58,6 @@
         @keyframes explodeOut { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
         .dust { position: absolute; background: rgba(139, 103, 66, 0.4); border-radius: 50%; pointer-events: none; filter: blur(4px); animation: dustFade 0.5s linear forwards; }
         @keyframes dustFade { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(3) translate(-40px, -10px); opacity: 0; } }
-        .ref-section { text-align: center; font-size: 10px; margin-top: 5px; color: #888; }
     </style>
 </head>
 <body>
@@ -115,68 +114,39 @@
         <div id="game-history" class="tab-body"></div>
         <div id="my-bets" class="tab-body" style="display:none"></div>
     </div>
-    
-    <div class="ref-section">كود الإحالة الخاص بك: <b id="my-ref-code" style="color:var(--gold)">---</b></div>
 </div>
 
 <div id="deposit-modal" class="modal">
     <div class="modal-content">
-        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">إيداع USDT (TRC20)</h3>
-        <p style="font-size:9px; color:#888; text-align:center; margin-bottom:5px;">انسخ العنوان وأرسل المبلغ:</p>
+        <h3 style="text-align:center; color:var(--gold); margin-bottom:15px;">إيداع USDT</h3>
         <div style="background:#0d1117; padding:10px; border-radius:8px; word-break:break-all; color:var(--accent); font-size:10px; text-align:center; margin-bottom:15px; border:1px solid #333;">TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg</div>
         <input type="text" id="tx-hash" placeholder="رقم العملية (Hash)" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
         <input type="number" id="dep-amount" placeholder="المبلغ" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
-        <button class="main-btn btn-bet" onclick="submitDeposit()">تأكيد الإرسال</button>
+        <button class="main-btn btn-bet" onclick="submitDeposit()">تأكيد</button>
         <button onclick="closeModal('deposit-modal')" style="width:100%; background:none; border:none; color:var(--error); margin-top:10px; cursor:pointer;">إلغاء</button>
     </div>
 </div>
 
 <div id="withdraw-modal" class="modal">
     <div class="modal-content">
-        <h3 style="text-align:center; color:var(--error); margin-bottom:15px;">سحب الأرباح</h3>
-        <input type="text" id="wa" placeholder="عنوان محفظة USDT (TRC20)" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
-        <input type="number" id="wam" placeholder="المبلغ للسحب" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
+        <h3 style="text-align:center; color:var(--error); margin-bottom:15px;">طلب سحب</h3>
+        <input type="text" id="wa" placeholder="عنوان المحفظة" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:10px;">
+        <input type="number" id="wam" placeholder="المبلغ" style="width:100%; padding:10px; background:#12191f; border:1px solid #333; color:white; border-radius:8px; margin-bottom:15px;">
         <button class="main-btn btn-cash" onclick="submitWithdraw()">طلب سحب</button>
         <button onclick="closeModal('withdraw-modal')" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">إلغاء</button>
     </div>
 </div>
 
 <script>
+    // الإعدادات الأساسية
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
-    const SMART_FUNCTION_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co/functions/v1/smart-function";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
-    async function fetchCrashPoint() {
-        try {
-            const response = await fetch(SMART_FUNCTION_URL, {
-                method: 'GET',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-            const data = await response.json();
-            return data.crashPoint || generateManualPoint(); 
-        } catch (e) {
-            return generateManualPoint();
-        }
-    }
-
-    function generateManualPoint() {
-        const r = Math.random() * 100;
-        if (r < 70) return parseFloat((1.00 + Math.random() * 1.00).toFixed(2));
-        if (r < 90) return parseFloat((2.00 + Math.random() * 2.00).toFixed(2));
-        if (r < 99) return parseFloat((4.00 + Math.random() * 6.00).toFixed(2));
-        return parseFloat((10.00 + Math.random() * 40.00).toFixed(2));
-    }
-
-    function toggleControls(lock) {
-        document.getElementById('ba').disabled = lock;
-        document.getElementById('av').disabled = lock;
-        document.getElementById('auto-cash-toggle').disabled = lock;
-    }
-
+    // محرك اللعبة
     function engine() {
         setInterval(async () => {
             const now = Date.now();
@@ -203,7 +173,6 @@
                     const mv = document.getElementById('mult-val');
                     mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
                     document.getElementById('cw').style.left = Math.min(el * 10, 75) + '%';
-                    createDust();
                     updateBtnUI();
                     if(betted && !cashed && document.getElementById('auto-cash-toggle').checked) {
                         if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
@@ -211,35 +180,58 @@
                 }
             } else { 
                 state = 'loading'; 
-                crashP = await fetchCrashPoint();
+                crashP = generatePoint();
                 startT = Date.now(); cashed = false; 
             }
         }, 60);
     }
 
-    // --- التعديل الأمني: استخدام RPC لوضع الرهان ---
+    function generatePoint() {
+        const r = Math.random() * 100;
+        if (r < 70) return parseFloat((1.00 + Math.random() * 1.00).toFixed(2));
+        return parseFloat((2.00 + Math.random() * 5.00).toFixed(2));
+    }
+
+    async function handleAuth() {
+        const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
+        if(!u || !p) return alert("أدخل البيانات");
+        const email = `${u.trim()}@camel.com`;
+
+        try {
+            if(mode === 'signup') {
+                const { data, error } = await sb.auth.signUp({ email, password: p });
+                if(error) throw error;
+                // التأكد من استخدام اسم الجدول "Profiles" بالحرف الكبير كما في الـ SQL
+                await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: Math.random().toString(36).substring(7).toUpperCase() }]);
+                alert("تم التسجيل! سجل دخولك الآن."); switchAuth('login');
+            } else {
+                const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
+                if(error) throw error;
+                const { data: pr, error: perr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
+                if(perr) throw perr;
+                user = pr; startApp();
+            }
+        } catch(e) { alert("خطأ: " + e.message); }
+    }
+
     async function mainAction() {
         if(state === 'waiting' && !betted) {
             const amt = parseFloat(document.getElementById('ba').value);
             if(user.balance >= amt && amt > 0) {
+                // استخدام الوظيفة الآمنة التي أنشأناها في SQL
                 const { error } = await sb.rpc('place_bet_secure', { bet_amount_param: amt });
-                if(error) return alert("خطأ: " + error.message);
-                
-                betted = true; 
-                user.balance -= amt;
-                toggleControls(true);
+                if(error) return alert(error.message);
+                betted = true; user.balance -= amt;
                 document.getElementById('ub').innerText = user.balance.toFixed(2);
                 updateBtnUI();
-            } else { alert("الرصيد غير كافٍ"); }
+            } else { alert("رصيد غير كافٍ"); }
         } else if (state === 'racing' && betted && !cashed) doCashout();
     }
 
-    // --- التعديل الأمني: استخدام RPC لسحب الأرباح ---
     async function doCashout() {
         if(cashed || !betted || state !== 'racing') return;
         const { error } = await sb.rpc('claim_win_secure', { win_multiplier: currentMult });
-        if(error) return alert("خطأ في السحب: " + error.message);
-
+        if(error) return alert(error.message);
         cashed = true;
         let win = parseFloat(document.getElementById('ba').value) * currentMult;
         user.balance += win; 
@@ -249,16 +241,14 @@
 
     async function explosion() {
         state = 'paused';
-        toggleControls(true);
         document.getElementById('bg-move').style.display = 'none';
         document.getElementById('cw').style.display = 'none';
-        triggerVisualExplosion();
         const mv = document.getElementById('mult-val');
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
         
-        // في حالة الخسارة، الحالة في userbets تتغير تلقائياً في السيرفر أو نتركها 'pending' كخسارة
         if(betted && !cashed) {
+            // تحديث حالة الخسارة في جدول userbets (اسم صغير كما في صورتك)
             await sb.from('userbets').update({ multiplier: crashP, status: 'lost' }).eq('user_id', user.id).eq('status', 'pending');
         }
 
@@ -272,112 +262,54 @@
         }, 2500);
     }
 
-    function showTab(tid) {
-        document.querySelectorAll('.tab-body').forEach(b => b.style.display = 'none');
-        document.querySelectorAll('.tab-h').forEach(h => h.classList.remove('active'));
-        document.getElementById(tid).style.display = 'block';
-        if(event) event.target.classList.add('active');
-    }
-
-    async function sync() {
-        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(20);
-        if(data) {
-            document.getElementById('game-history').innerHTML = data.map(i => `
-                <div class="history-item">
-                    <span>الجولة #${i.id.toString().slice(-4)}</span>
-                    <span class="hi-badge" style="color:${i.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">${i.crash_point.toFixed(2)}x</span>
-                </div>`).join('');
-        }
-    }
-
-    async function syncMyBets() {
-        if(!user) return;
-        const { data } = await sb.from('userbets').select('*').eq('user_id', user.id).order('created_at', {ascending:false}).limit(20);
-        if(data) {
-            document.getElementById('my-bets').innerHTML = data.map(i => `
-                <div class="history-item">
-                    <span>💰 ${i.bet_amount}</span>
-                    <span style="color:${i.status === 'won' ? 'var(--accent)' : 'var(--error)'}">${i.status === 'won' ? 'فوز' : 'خسارة'} (${i.multiplier || '0.00'}x)</span>
-                </div>`).join('');
-        }
-    }
-
-    function createDust() {
-        const d = document.createElement('div'); d.className = 'dust';
-        const camelWrap = document.getElementById('cw');
-        d.style.left = (camelWrap.offsetLeft + 10) + 'px';
-        d.style.bottom = '15px'; document.getElementById('tr-container').appendChild(d);
-        setTimeout(() => d.remove(), 500);
-    }
-    function triggerVisualExplosion() {
-        for(let i=0; i<8; i++) {
-            const p = document.createElement('div'); p.className = 'exp-particle';
-            p.style.left = '50%'; p.style.top = '50%'; document.getElementById('display-zone').appendChild(p);
-            setTimeout(() => p.remove(), 600);
-        }
-    }
-    function updateBtnUI() {
-        const btn = document.getElementById('ab');
-        if (state === 'waiting') { btn.innerText = betted ? "انتظار الجولة..." : "وضع رهان"; btn.className = betted ? "main-btn btn-wait" : "main-btn btn-bet"; }
-        else if (state === 'racing') {
-            if (betted && !cashed) { btn.innerText = `سحب ${(currentMult * parseFloat(document.getElementById('ba').value)).toFixed(2)}`; btn.className = "main-btn btn-cash"; }
-            else { btn.innerText = "سباق جارٍ..."; btn.className = "main-btn btn-wait"; }
-        }
-    }
-    function resetScene() { document.getElementById('cw').style.left = '0%'; }
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function switchAuth(m) { mode = m; document.getElementById('tb-login').classList.toggle('active', m==='login'); document.getElementById('tb-signup').classList.toggle('active', m==='signup'); }
-    
-    async function handleAuth() {
-        const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
-        if(!u || !p) return alert("يرجى إدخال البيانات");
-        const email = `${u.trim()}@camel.com`;
-        try {
-            if(mode === 'signup') {
-                const { data, error } = await sb.auth.signUp({ email, password: p });
-                if(error) throw error;
-                const rc = Math.random().toString(36).substring(2, 7).toUpperCase();
-                await sb.from('Profiles').insert([{ id: data.user.id, username: u, balance: 0, referral_code: rc, referred_by: r || null }]);
-                alert("تم التسجيل! سجل دخولك الآن."); switchAuth('login');
-            } else {
-                const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
-                if(error) throw error;
-                const { data: pr } = await sb.from('Profiles').select('*').eq('id', data.user.id).single();
-                user = pr; startApp();
-            }
-        } catch(e) { alert("خطأ: " + e.message); }
-    }
-
+    // دوال المساعدة
     function startApp() {
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('un').innerText = user.username;
         document.getElementById('ub').innerText = user.balance.toFixed(2);
-        document.getElementById('my-ref-code').innerText = user.referral_code;
         engine(); sync(); syncMyBets();
     }
 
+    async function sync() {
+        const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(15);
+        if(data) document.getElementById('game-history').innerHTML = data.map(i => `<div class="history-item"><span>جولة #${i.id}</span><span style="color:${i.crash_point<2?'#ff4b4b':'#00ff88'}">${i.crash_point.toFixed(2)}x</span></div>`).join('');
+    }
+
+    async function syncMyBets() {
+        if(!user) return;
+        const { data } = await sb.from('userbets').select('*').eq('user_id', user.id).order('created_at', {ascending:false}).limit(10);
+        if(data) document.getElementById('my-bets').innerHTML = data.map(i => `<div class="history-item"><span>💰 ${i.bet_amount}</span><span style="color:${i.status==='won'?'#00ff88':'#ff4b4b'}">${i.status==='won'?'فوز':'خسارة'}</span></div>`).join('');
+    }
+
+    function toggleControls(l) { document.getElementById('ba').disabled = l; document.getElementById('av').disabled = l; }
+    function updateBtnUI() {
+        const b = document.getElementById('ab');
+        if(state==='waiting') { b.innerText = betted ? "في الانتظار..." : "وضع رهان"; b.className = betted ? "main-btn btn-wait" : "main-btn btn-bet"; }
+        else if(state==='racing') { 
+            if(betted && !cashed) { b.innerText = "سحب أرباح"; b.className = "main-btn btn-cash"; }
+            else { b.innerText = "سباق جارٍ..."; b.className = "main-btn btn-wait"; }
+        }
+    }
+    function resetScene() { document.getElementById('cw').style.left = '0%'; }
+    function switchAuth(m) { mode = m; document.getElementById('tb-login').classList.toggle('active', m==='login'); document.getElementById('tb-signup').classList.toggle('active', m==='signup'); document.getElementById('auth-bt').innerText = m==='login'?'دخول':'تسجيل'; }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
     async function submitDeposit() {
         const h = document.getElementById('tx-hash').value, a = document.getElementById('dep-amount').value;
-        if(!h || !a) return alert("املأ البيانات");
+        if(!h || !a) return alert("أكمل البيانات");
         await sb.from('deposits').insert([{ user_id: user.id, amount: parseFloat(a), tx_hash: h }]);
         alert("تم الإرسال للمراجعة"); closeModal('deposit-modal');
     }
 
     async function submitWithdraw() {
-        const a = document.getElementById('wa').value, m = parseFloat(document.getElementById('wam').value);
-        if(!a || m < 10) return alert("الحد الأدنى للسحب 10 USDT");
-        if(user.balance < m) return alert("رصيد غير كافٍ");
-        
-        // تحديث الرصيد عند طلب السحب (يفضل أيضاً تحويله لـ RPC مستقبلاً)
-        const newBal = user.balance - m;
-        const { error } = await sb.from('Profiles').update({ balance: newBal }).eq('id', user.id);
-        if(error) return alert("فشل في تحديث الرصيد");
-
-        user.balance = newBal;
-        await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: a }]);
+        const w = document.getElementById('wa').value, m = parseFloat(document.getElementById('wam').value);
+        if(!w || m > user.balance) return alert("بيانات خاطئة أو رصيد غير كافٍ");
+        user.balance -= m;
+        await sb.from('Profiles').update({ balance: user.balance }).eq('id', user.id);
+        await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: w }]);
         document.getElementById('ub').innerText = user.balance.toFixed(2);
-        alert("تم تقديم طلب السحب"); closeModal('withdraw-modal');
+        alert("طلبك قيد المراجعة"); closeModal('withdraw-modal');
     }
 </script>
 </body>
