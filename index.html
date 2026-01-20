@@ -31,7 +31,7 @@
         .field { flex: 1; text-align: center; }
         .field label { display: block; font-size: 8px; color: #888; margin-bottom: 2px; }
         .field input { width: 100%; background: var(--input); border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 14px; }
-        .main-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; }
+        .main-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; transition: all 0.2s; }
         .btn-bet { background: var(--accent); color: #000; }
         .btn-cash { background: var(--error); color: white; }
         .btn-wait { background: #222; color: #555; cursor: not-allowed; }
@@ -138,7 +138,6 @@
     let user = null, state = 'waiting', mode = 'login';
     let nextT = 0, startT = 0, crashP = 0, betted = false, cashed = false, currentMult = 1.00;
 
-    // --- حماية الرصيد: جلب البيانات من السيرفر فقط ---
     async function syncUserData() {
         if (!user) return;
         const { data } = await sb.from('Profiles').select('*').eq('id', user.id).single();
@@ -153,7 +152,7 @@
         try {
             const { data, error } = await sb.functions.invoke('smart-function');
             if (error) throw error;
-            return data.crashPoint; 
+            return parseFloat(data.crashPoint); 
         } catch (e) { return 1.15; }
     }
 
@@ -174,16 +173,24 @@
             } else if (startT > 0) {
                 state = 'racing';
                 document.getElementById('bg-move').style.display = 'block';
-                let el = (now - startT)/1000;
-                currentMult = Math.pow(1.08, el);
                 
-                if(currentMult >= crashP) { explosion(); } 
-                else {
+                // تحسين معادلة النمو لتكون أكثر سلاسة واستجابة
+                let el = (now - startT)/1000;
+                currentMult = Math.pow(1.075, el); 
+                
+                // معالجة الانفجار
+                if(currentMult >= crashP) { 
+                    explosion(); 
+                } else {
                     document.getElementById('timer-val').style.display = 'none';
                     const mv = document.getElementById('mult-val');
-                    mv.style.display = 'block'; mv.innerText = currentMult.toFixed(2)+'x';
+                    mv.style.display = 'block'; 
+                    mv.innerText = currentMult.toFixed(2)+'x';
                     document.getElementById('cw').style.left = Math.min(el * 10, 75) + '%';
-                    createDust(); updateBtnUI();
+                    createDust(); 
+                    updateBtnUI();
+
+                    // السحب الآلي
                     if(betted && !cashed && document.getElementById('auto-cash-toggle').checked) {
                         if(currentMult >= parseFloat(document.getElementById('av').value)) doCashout();
                     }
@@ -191,16 +198,20 @@
             } else { 
                 state = 'loading'; 
                 crashP = await fetchCrashPoint();
-                startT = Date.now(); cashed = false; 
+                // معالجة الكراش الفوري (5%) مباشرة لتقليل اللاج
+                if (crashP <= 1.00) {
+                    explosion();
+                } else {
+                    startT = Date.now(); 
+                    cashed = false; 
+                }
             }
-        }, 60);
+        }, 50); // تسريع التحديث لـ 50ms لزيادة السلاسة
     }
 
-    // --- المنطق المؤمن: الرهان والسحب عبر RPC حصراً ---
     async function mainAction() {
         if(state === 'waiting' && !betted) {
             const amt = parseFloat(document.getElementById('ba').value);
-            // ننادي وظيفة السيرفر (SQL) لخصم الرصيد
             const { data, error } = await sb.rpc('place_bet_secure', { bet_amount_param: amt });
             if(!error && data.success) {
                 betted = true;
@@ -215,13 +226,24 @@
 
     async function doCashout() {
         if(cashed || !betted || state !== 'racing') return;
-        // ننادي وظيفة السيرفر (SQL) لإضافة الأرباح
-        const { data, error } = await sb.rpc('claim_win_secure', { win_multiplier: currentMult });
+        
+        // قفل الواجهة فوراً لمنع اللاج والضغط المتكرر
+        const capturedMult = currentMult;
+        cashed = true;
+        const btn = document.getElementById('ab');
+        btn.innerText = "جاري التأكيد...";
+        btn.className = "main-btn btn-wait";
+
+        const { data, error } = await sb.rpc('claim_win_secure', { win_multiplier: parseFloat(capturedMult.toFixed(2)) });
+        
         if(!error && data.success) {
-            cashed = true;
-            await syncUserData(); // جلب الرصيد النهائي المؤكد
+            await syncUserData();
             updateBtnUI();
-        } else { console.error(error); }
+        } else { 
+            cashed = false; // إعادة المحاولة في حال فشل السيرفر فقط
+            updateBtnUI();
+            console.error(error); 
+        }
     }
 
     async function explosion() {
@@ -230,11 +252,14 @@
         document.getElementById('cw').style.display = 'none';
         triggerVisualExplosion();
         const mv = document.getElementById('mult-val');
+        mv.style.display = 'block';
         mv.innerText = crashP.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
         
-        await sb.from('GameHistory').insert([{ crash_point: crashP }]);
-        sync(); syncMyBets();
+        // تسجيل النتيجة في الخلفية
+        sb.from('GameHistory').insert([{ crash_point: crashP }]).then(() => {
+            sync(); syncMyBets();
+        });
         
         setTimeout(() => {
             state = 'waiting'; startT = 0; betted = false;
@@ -243,7 +268,7 @@
         }, 2500);
     }
 
-    // --- المميزات البصرية (كما هي) ---
+    // --- الوظائف البصرية والإدارية (كما هي) ---
     function createDust() {
         const d = document.createElement('div'); d.className = 'dust';
         d.style.left = (document.getElementById('cw').offsetLeft + 10) + 'px';
@@ -262,11 +287,11 @@
         if (state === 'waiting') { btn.innerText = betted ? "بانتظار السباق..." : "وضع رهان"; btn.className = betted ? "main-btn btn-wait" : "main-btn btn-bet"; }
         else if (state === 'racing') {
             if (betted && !cashed) { btn.innerText = `سحب ${(currentMult * parseFloat(document.getElementById('ba').value)).toFixed(2)}`; btn.className = "main-btn btn-cash"; }
+            else if (cashed) { btn.innerText = "تم السحب ✓"; btn.className = "main-btn btn-wait"; }
             else { btn.innerText = "سباق جارٍ..."; btn.className = "main-btn btn-wait"; }
         }
     }
 
-    // --- الإدارة والتزامن ---
     async function handleAuth() {
         const u = document.getElementById('ui').value, p = document.getElementById('pi').value, r = document.getElementById('ri').value;
         const email = `${u.trim()}@camel.com`;
@@ -285,6 +310,7 @@
             }
         } catch(e) { alert("خطأ: " + e.message); }
     }
+
     function startApp() {
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('un').innerText = user.username;
@@ -298,7 +324,6 @@
     async function submitWithdraw() {
         const a = document.getElementById('wa').value, m = parseFloat(document.getElementById('wam').value);
         if(user.balance < m) return alert("رصيد ناقص");
-        // السحب يخصم من الرصيد عبر تحديث آمن (يفضل أيضاً تحويله لـ RPC مستقبلاً)
         const {error} = await sb.from('Profiles').update({ balance: user.balance - m }).eq('id', user.id);
         if(!error) {
             await sb.from('withdrawals').insert([{ user_id: user.id, amount: m, wallet_address: a }]);
@@ -317,7 +342,13 @@
     }
     async function sync() {
         const { data } = await sb.from('GameHistory').select('*').order('created_at', {ascending:false}).limit(20);
-        if(data) document.getElementById('game-history').innerHTML = data.map(i => `<div class="history-item"><span>جولة #${i.id.toString().slice(-4)}</span><span class="hi-badge" style="color:${i.crash_point < 2 ? 'var(--error)' : 'var(--accent)'}">${i.crash_point.toFixed(2)}x</span></div>`).join('');
+        if(data) document.getElementById('game-history').innerHTML = data.map(i => `
+            <div class="history-item">
+                <span>جولة #${i.id.toString().slice(-4)}</span>
+                <span class="hi-badge" style="color:${i.crash_point >= 10 ? 'var(--gold)' : (i.crash_point < 2 ? 'var(--error)' : 'var(--accent)')}">
+                    ${i.crash_point.toFixed(2)}x
+                </span>
+            </div>`).join('');
     }
     async function syncMyBets() {
         if(!user) return;
