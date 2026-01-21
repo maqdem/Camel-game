@@ -3,180 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐪 سباق الهجن برو 2026 | النسخة الاحترافية</title>
+    <title>🐪 سباق الهجن برو | الإصدار البصري المتطور</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg: #0b141a; --card: #1c262d; --accent: #00ff88; --error: #ff4b4b; --gold: #ffcc00; --text: #e1e1e1; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; justify-content: center; height: 100vh; }
-        .app-container { width: 100%; max-width: 450px; background: var(--card); position: relative; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* شاشة السباق */
-        .game-display { text-align: center; padding: 40px 0; background: #12191f; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
+        .app-container { width: 100%; max-width: 450px; background: var(--card); display: flex; flex-direction: column; padding: 15px; position: relative; }
+        
+        /* شاشة العرض مع تأثير الاهتزاز */
+        .game-display { text-align: center; padding: 30px 0; background: #12191f; border-radius: 20px; margin-bottom: 15px; border: 1px solid #333; position: relative; overflow: hidden; }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 20% { transform: translate(-3px, 0px); } 40% { transform: translate(3px, 2px); } 60% { transform: translate(-3px, 1px); } 80% { transform: translate(3px, -1px); } 100% { transform: translate(0, 0); } }
+
         #timer-val { font-size: 80px; font-weight: 900; color: var(--gold); }
-        #mult-val { font-size: 70px; font-weight: 900; color: var(--accent); display: none; }
+        #mult-val { font-size: 70px; font-weight: 900; color: var(--accent); display: none; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
+
+        /* المضمار والخلفية المتحركة */
+        .track { height: 130px; background: #1a2228; border-radius: 15px; position: relative; overflow: hidden; border-bottom: 5px solid #3e3121; }
+        .moving-ground { position: absolute; bottom: 0; width: 200%; height: 20px; background: repeating-linear-gradient(90deg, #3e3121 0, #3e3121 40px, #5a4a35 41px, #5a4a35 42px); display: none; }
+        @keyframes moveGround { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        .camel { position: absolute; bottom: 15px; left: 0%; font-size: 55px; transition: left 0.1s linear; transform: scaleX(-1); z-index: 10; }
         
-        /* المضمار */
-        .track { height: 120px; background: url('https://www.transparenttextures.com/patterns/sandpaper.png'), #1a2228; border-radius: 15px; position: relative; overflow: hidden; margin-bottom: 20px; border-bottom: 4px solid #3e3121; }
-        .camel { position: absolute; bottom: 10px; left: 0%; font-size: 50px; transition: left 0.1s linear; transform: scaleX(-1); }
+        /* تأثيرات الغبار والانفجار */
+        .dust { position: absolute; background: rgba(139, 103, 66, 0.4); border-radius: 50%; pointer-events: none; filter: blur(4px); animation: dustFade 0.6s linear forwards; }
+        @keyframes dustFade { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(3) translate(-30px, -10px); opacity: 0; } }
+        
+        .particle { position: absolute; background: var(--gold); border-radius: 50%; pointer-events: none; animation: pOut 0.8s ease-out forwards; }
+        @keyframes pOut { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0) translate(var(--tx), var(--ty)); opacity: 0; } }
 
-        /* الأزرار والتحكم */
         .controls { display: grid; gap: 10px; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #0b141a; color: white; text-align: center; font-size: 18px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-bet { background: var(--accent); color: #000; }
-        .btn-cash { background: var(--error); color: #fff; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: none; background: #0b141a; color: white; text-align: center; font-size: 18px; }
+        .btn { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 20px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .btn-bet { background: var(--accent); color: #000; box-shadow: 0 4px 0 #009e54; }
+        .btn-cash { background: var(--error); color: #fff; box-shadow: 0 4px 0 #b32d2d; }
         .btn-disabled { background: #444; color: #888; cursor: not-allowed; }
-
-        /* قسم الإيداع */
-        .deposit-box { margin-top: 30px; padding: 15px; background: #12191f; border-radius: 15px; border: 1px dashed #555; }
-        .wallet-addr { font-family: monospace; color: var(--gold); background: #000; padding: 5px; border-radius: 5px; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div style="color: var(--gold); font-weight: bold;">💰 رصيدك: $<span id="user-balance">0.00</span></div>
-        <div style="font-size: 12px; color: #888;">ID: <span id="user-id">...</span></div>
+    <div style="display: flex; justify-content: space-between; padding: 10px; color: var(--gold); font-weight: bold;">
+        <span>💰 رصيدك: $<span id="user-balance">0.00</span></span>
     </div>
 
-    <div class="game-display">
+    <div class="game-display" id="main-screen">
         <div id="timer-val">5</div>
         <div id="mult-val">1.00x</div>
     </div>
 
-    <div class="track">
+    <div class="track" id="track-box">
+        <div class="moving-ground" id="ground-anim"></div>
         <div id="camel" class="camel">🐪</div>
     </div>
 
-    <div class="controls">
-        <input type="number" id="bet-amount" value="10" min="1">
+    <div class="controls" style="margin-top: 15px;">
+        <input type="number" id="bet-amount" value="10">
         <button id="main-btn" class="btn btn-bet" onclick="handleMainAction()">وضع رهان</button>
-    </div>
-
-    <div class="deposit-box">
-        <h4 style="margin-top:0; color: var(--gold);">📥 شحن رصيد آلي (USDT TRC20)</h4>
-        <p style="font-size: 11px;">أرسل للمحفظة: <span class="wallet-addr">TG9gT1pPJK3aETRp1hVu28F5Zayu4oVyEg</span></p>
-        <input type="text" id="tx-hash" placeholder="الصق الـ Transaction Hash هنا" style="font-size: 14px; margin-bottom: 10px;">
-        <button onclick="verifyDeposit()" id="dep-btn" class="btn" style="background: #333; color: white; padding: 10px; font-size: 14px;">تأكيد الإيداع</button>
     </div>
 </div>
 
 <script>
-    // إعدادات الاتصال بالسيرفر
+    // الإعدادات الأصلية لجمل1
     const SB_URL = "https://uqmfwgdrlcqywxvdljlb.supabase.co";
     const SB_KEY = "sb_publishable_I5yn0tVPmbK6XczHoiQS-g_fct3pACT";
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
     let currentState = 'waiting', crashPoint = 0, serverStartTime = 0;
     let isBetted = false, isCashedOut = false, currentMultiplier = 1.00;
-    let user = { id: 'guest-' + Math.floor(Math.random()*1000), balance: 100.00 }; // تجريبي
 
-    // 1. المزامنة مع الـ Edge Function
-    async function syncWithServer() {
+    // 1. المزامنة والتحقق (نفس حماية جمل1)
+    async function syncServer() {
         try {
             const { data } = await sb.functions.invoke('smart-function');
             crashPoint = data.crashPoint;
             serverStartTime = data.serverTime;
-            startRound();
-        } catch (e) {
-            console.error("Sync Error:", e);
-            setTimeout(syncWithServer, 2000);
-        }
+            currentState = 'racing';
+            
+            // تفعيل ميزات بصرية عند بدء السباق
+            document.getElementById('ground-anim').style.display = 'block';
+            document.getElementById('ground-anim').style.animation = 'moveGround 0.5s linear infinite';
+            document.getElementById('timer-val').style.display = 'none';
+            document.getElementById('mult-val').style.display = 'block';
+        } catch (e) { setTimeout(syncServer, 2000); }
     }
 
-    function startRound() {
-        currentState = 'racing';
-        document.getElementById('timer-val').style.display = 'none';
-        document.getElementById('mult-val').style.display = 'block';
-        document.getElementById('mult-val').style.color = 'var(--accent)';
-    }
-
-    // 2. المحرك الرئيسي (Engine) لضمان عدم وجود لاج
+    // 2. المحرك مع الإضافات البصرية [جمل1 المطور]
     setInterval(() => {
         if (currentState === 'racing') {
             const elapsed = (Date.now() - serverStartTime) / 1000;
-            currentMultiplier = Math.pow(1.075, elapsed); // معادلة النمو الأسي
+            currentMultiplier = Math.pow(1.075, elapsed);
 
             if (currentMultiplier >= crashPoint) {
-                handleCrash();
+                triggerCrash();
             } else {
-                renderUpdate(elapsed, currentMultiplier);
+                renderFrame(elapsed, currentMultiplier);
             }
         }
-    }, 30);
+    }, 35);
 
-    function renderUpdate(elapsed, mult) {
+    function renderFrame(elapsed, mult) {
         document.getElementById('mult-val').innerText = mult.toFixed(2) + 'x';
         document.getElementById('camel').style.left = Math.min(elapsed * 10, 85) + '%';
         
-        const btn = document.getElementById('main-btn');
+        // ميزة غبار الصحراء
+        if (Math.random() > 0.6) createDust();
+
         if (isBetted && !isCashedOut) {
+            const btn = document.getElementById('main-btn');
             btn.innerText = `سحب ${(mult * document.getElementById('bet-amount').value).toFixed(2)}$`;
             btn.className = "btn btn-cash";
         }
     }
 
-    function handleCrash() {
+    function createDust() {
+        const d = document.createElement('div'); d.className = 'dust';
+        const camel = document.getElementById('camel');
+        d.style.left = camel.offsetLeft + 'px';
+        d.style.bottom = '15px';
+        document.getElementById('track-box').appendChild(d);
+        setTimeout(() => d.remove(), 600);
+    }
+
+    function triggerCrash() {
         currentState = 'crashed';
+        // 1. اهتزاز الشاشة
+        document.getElementById('main-screen').classList.add('shake');
+        
+        // 2. تغيير لون العداد
         const mv = document.getElementById('mult-val');
         mv.innerText = crashPoint.toFixed(2) + 'x';
         mv.style.color = 'var(--error)';
-        
-        const btn = document.getElementById('main-btn');
-        btn.innerText = "انفجار (Crashed)";
-        btn.className = "btn btn-disabled";
+
+        // 3. تأثير الانفجار (الجسيمات)
+        createExplosionParticles();
+
+        // 4. إيقاف الحركة
+        document.getElementById('ground-anim').style.animation = 'none';
+        document.getElementById('main-btn').innerText = "انفجار!";
+        document.getElementById('main-btn').className = "btn btn-disabled";
 
         setTimeout(() => {
-            resetUI();
-            syncWithServer();
-        }, 4000);
+            document.getElementById('main-screen').classList.remove('shake');
+            resetGame();
+        }, 3500);
     }
 
-    function resetUI() {
+    function createExplosionParticles() {
+        for(let i=0; i<15; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.setProperty('--tx', (Math.random()*200 - 100)+'px');
+            p.style.setProperty('--ty', (Math.random()*200 - 100)+'px');
+            p.style.width = p.style.height = (Math.random()*10 + 5)+'px';
+            p.style.left = '50%'; p.style.top = '50%';
+            document.getElementById('main-screen').appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        }
+    }
+
+    function resetGame() {
+        currentState = 'waiting';
         document.getElementById('timer-val').style.display = 'block';
         document.getElementById('mult-val').style.display = 'none';
+        document.getElementById('mult-val').style.color = 'var(--accent)';
         document.getElementById('camel').style.left = '0%';
         isBetted = false; isCashedOut = false;
         document.getElementById('main-btn').innerText = "وضع رهان";
         document.getElementById('main-btn').className = "btn btn-bet";
-    }
-
-    // 3. نظام الإيداع والتحقق عبر smooth-processor
-    async function verifyDeposit() {
-        const hash = document.getElementById('tx-hash').value;
-        const btn = document.getElementById('dep-btn');
-        if(!hash) return alert("أدخل الهاش أولاً");
-
-        btn.innerText = "جاري التحقق...";
-        const { data, error } = await sb.functions.invoke('smooth-processor', {
-            body: { txHash: hash, userId: user.id, amount: 1 }
-        });
-
-        if(data?.success) {
-            alert("تم الشحن بنجاح!");
-            location.reload();
-        } else {
-            alert("فشل التحقق: " + (error || "المعاملة غير صحيحة"));
-            btn.innerText = "تأكيد الإيداع";
-        }
+        syncServer();
     }
 
     async function handleMainAction() {
         if (currentState === 'racing' && isBetted && !isCashedOut) {
             isCashedOut = true;
-            alert(`مبروك! ربحت ${(currentMultiplier * document.getElementById('bet-amount').value).toFixed(2)}$`);
-            resetUI();
-        } else if (!isBetted) {
+            alert("تم السحب بنجاح!");
+            // هنا يوضع استدعاء RPC لتحديث الرصيد في قاعدة البيانات
+        } else if (currentState === 'waiting' && !isBetted) {
             isBetted = true;
-            document.getElementById('main-btn').innerText = "انتظر السحب...";
+            document.getElementById('main-btn').innerText = "تم الرهان..";
         }
     }
 
-    // التشغيل الأولي
-    syncWithServer();
-    document.getElementById('user-id').innerText = user.id;
+    syncServer();
 </script>
-
 </body>
 </html>
